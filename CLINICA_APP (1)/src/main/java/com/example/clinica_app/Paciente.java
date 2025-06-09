@@ -1,6 +1,5 @@
 package com.example.clinica_app;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,7 +10,7 @@ public class Paciente {
     private String contato;
     private List<Consulta> historicoConsultas;
 
-    public Paciente(String idPaciente, String nome, int  idade, String contato) {
+    public Paciente(String idPaciente, String nome, int idade, String contato) {
         this.idPaciente = idPaciente;
         this.nome = nome;
         this.idade = idade;
@@ -19,10 +18,23 @@ public class Paciente {
         this.historicoConsultas = new ArrayList<>();
     }
 
-    public String getIdPaciente() { return idPaciente; }
-    public String getNome() { return nome; }
-    public List<Consulta> getHistorico() { return historicoConsultas; }
+    public String getIdPaciente() {
+        return idPaciente;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public List<Consulta> getHistorico() {
+        return historicoConsultas;
+    }
+
     public void adicionarConsultaAoHistorico(Consulta consulta) {
         historicoConsultas.add(consulta);
+    }
+
+    public void removerConsultaDoHistorico(String idConsulta) {
+        historicoConsultas.removeIf(c -> c.getIdConsulta().equals(idConsulta));
     }
 }
