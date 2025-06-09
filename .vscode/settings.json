@@ -1,16 +1,18 @@
 {
     "java.project.referencedLibraries": [
-        "lib/**/*.jar",
-        "c:\\Users\\jamin\\Documents\\Java libs\\JavaFX\\lib\\javafx.base.jar",
-        "c:\\Users\\jamin\\Documents\\Java libs\\JavaFX\\lib\\javafx.controls.jar",
-        "c:\\Users\\jamin\\Documents\\Java libs\\JavaFX\\lib\\javafx.fxml.jar",
-        "c:\\Users\\jamin\\Documents\\Java libs\\JavaFX\\lib\\javafx.graphics.jar",
         "c:\\Users\\jamin\\Documents\\Java libs\\JavaFX\\lib\\javafx.media.jar",
-        "c:\\Users\\jamin\\Documents\\Java libs\\JavaFX\\lib\\javafx.swing.jar",
-        "c:\\Users\\jamin\\Documents\\Java libs\\JavaFX\\lib\\javafx.web.jar",
         "c:\\Users\\jamin\\Documents\\Java libs\\JavaFX\\lib\\javafx-swt.jar",
-        "c:\\Users\\jamin\\Documents\\Java libs\\JavaFX\\lib\\jdk.jsobject.jar",
         "c:\\Users\\jamin\\Documents\\Java libs\\JavaFX\\lib\\jfx.incubator.input.jar",
+        "c:\\Users\\jamin\\Documents\\Java libs\\JavaFX\\lib\\javafx.web.jar",
+        "c:\\Users\\jamin\\Documents\\Java libs\\JavaFX\\lib\\javafx.swing.jar",
+        "c:\\Users\\jamin\\Documents\\Java libs\\JavaFX\\lib\\javafx.base.jar",
+        "c:\\Users\\jamin\\Documents\\Java libs\\JavaFX\\lib\\jdk.jsobject.jar",
+        "c:\\Users\\jamin\\Documents\\Java libs\\JavaFX\\lib\\javafx.controls.jar",
+        "c:\\Users\\jamin\\Documents\\Java libs\\JavaFX\\lib\\javafx.graphics.jar",
+        "c:\\Users\\jamin\\Documents\\Java libs\\JavaFX\\lib\\javafx.fxml.jar",
         "c:\\Users\\jamin\\Documents\\Java libs\\JavaFX\\lib\\jfx.incubator.richtext.jar"
+    ],
+    "java.project.sourcePaths": [
+        "CLINICA_APP (1)\\src\\main\\java"
     ]
 }
