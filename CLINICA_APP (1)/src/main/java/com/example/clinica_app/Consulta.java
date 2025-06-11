@@ -20,12 +20,29 @@ public class Consulta {
         this.dataHoraFim = dataHoraFim;
         this.status = "AGENDADA";
     }
+    public Consulta(String idConsulta, Medico medico,
+                    LocalDateTime dataHoraInicio, LocalDateTime dataHoraFim) {
+        this.idConsulta = idConsulta;
+        this.medico = medico;
+        this.dataHoraInicio = dataHoraInicio;
+        this.dataHoraFim = dataHoraFim;
+        this.status = "DISPONIVEL";  // paciente será null
+    }
 
     public String getIdConsulta() { return idConsulta; }
     public Paciente getPaciente() { return paciente; }
     public Medico getMedico() { return medico; }
     public LocalDateTime getDataHoraInicio() { return dataHoraInicio; }
+    public LocalDateTime getDataHoraFim() {return dataHoraFim;}
     public String getStatus() { return status; }
+
+    public void setPaciente(Paciente paciente) {
+        this.paciente = paciente;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
 
     public void cancelar() {
         if (status.equals("REALIZADA")) throw new IllegalStateException("Consulta já realizada");

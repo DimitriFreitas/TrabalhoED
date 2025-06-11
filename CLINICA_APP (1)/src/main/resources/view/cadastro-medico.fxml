@@ -14,9 +14,9 @@
 
     <Label text="Cadastro de Médico" style="-fx-font-size: 18px; -fx-font-weight: bold;" />
 
-    <TextField fx:id="campoId" promptText="ID do Médico" />
-    <TextField fx:id="campoNome" promptText="Nome" />
-    <TextField fx:id="campoEspecialidade" promptText="Especialidade" />
+    <TextField fx:id="campoIdMedico" promptText="ID do Médico" />
+    <TextField fx:id="campoNomeMedico" promptText="Nome" />
+    <TextField fx:id="campoEspecialidadeMedico" promptText="Especialidade" />
 
     <Button text="Cadastrar" onAction="#onCadastrarMedico" />
 </VBox>

@@ -24,18 +24,33 @@ public class SistemaAgendamento {
         medicos.put(medico.getIdMedico(), medico);
         agendas.put(medico.getIdMedico(), new TreeMap<>());
     }
-
-    public void agendarConsulta(String idPaciente, String idMedico, LocalDateTime inicio, LocalDateTime fim) {
-        Paciente paciente = pacientes.get(idPaciente);
+   // Método para cadastrar a disponibilidade de um médico
+    public void cadastrarDisponibilidade(String idMedico, LocalDateTime inicio, LocalDateTime fim) {
         Medico medico = medicos.get(idMedico);
         TreeMap<LocalDateTime, Consulta> agenda = agendas.get(idMedico);
 
-        if (agenda.containsKey(inicio)) throw new IllegalStateException("Horário já ocupado");
+        if (agenda.containsKey(inicio)) throw new IllegalStateException("Horário já cadastrado");
 
-        Consulta consulta = new Consulta(UUID.randomUUID().toString(), paciente, medico, inicio, fim);
-        agenda.put(inicio, consulta);
+        Consulta disponibilidade = new Consulta(UUID.randomUUID().toString(), null, medico, inicio, fim);
+        disponibilidade.setStatus("DISPONIVEL");
+
+        agenda.put(inicio, disponibilidade);
+    }
+    // Método para agendar uma consulta
+    public void agendarConsulta(String idPaciente, String idMedico, LocalDateTime inicio) {
+        Paciente paciente = pacientes.get(idPaciente);
+        TreeMap<LocalDateTime, Consulta> agenda = agendas.get(idMedico);
+        Consulta consulta = agenda.get(inicio);
+
+        if (consulta == null || !"DISPONIVEL".equals(consulta.getStatus()))
+            throw new IllegalStateException("Horário não disponível para agendamento");
+
+        consulta.setPaciente(paciente);
+        consulta.setStatus("AGENDADA");
         paciente.adicionarConsultaAoHistorico(consulta);
     }
+
+
 
     public boolean cancelarConsultaPorPaciente(String idPaciente, String idConsulta) {
         for (TreeMap<LocalDateTime, Consulta> agenda : agendas.values()) {

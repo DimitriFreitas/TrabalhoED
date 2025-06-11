@@ -5,10 +5,19 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.TextField;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TableColumn;
+
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
+import java.util.stream.Collectors;
 
 public class ClinicaController {
 
@@ -26,8 +35,23 @@ public class ClinicaController {
     @FXML private TextField campoNomeMedico;
     @FXML private TextField campoEspecialidadeMedico;
 
+    // Campos de Cadastro de Disponibilidade
+    @FXML private DatePicker dataInicioPicker;
+    @FXML private TextField horaInicioField;
+    @FXML private DatePicker dataFimPicker;
+    @FXML private TextField horaFimField;
+    @FXML private TableView<Consulta> tabelaDisponibilidades;
+    @FXML private TableColumn<Consulta, LocalDateTime> colInicio;
+    @FXML private TableColumn<Consulta, LocalDateTime> colFim;
+    @FXML private TableColumn<Consulta, String> colStatus;
+
+    // Variável para armazenar o ID do médico logado
+    private String idMedicoLogado;
+
     // Sistema compartilhado
     private final SistemaAgendamento sistema = AppContext.sistema;
+    //test
+
 
     // MÉTODO 1: Verifica ID digitado e direciona para tela correspondente
     @FXML
@@ -42,6 +66,7 @@ public class ClinicaController {
         if (sistema.isPaciente(id)) {
             abrirTela("/view/tela-paciente.fxml", "Área do Paciente");
         } else if (sistema.isMedico(id)) {
+            AppContext.usuarioLogadoId=id; // ← salva o ID do médico logado
             abrirTela("/view/tela-medico.fxml", "Área do Médico");
         } else {
             mostrarAlerta(Alert.AlertType.ERROR, "ID não encontrado.");
@@ -149,6 +174,85 @@ public class ClinicaController {
         alert.setHeaderText(null);
         alert.setContentText(msg);
         alert.showAndWait();
+    }
+    //MÉTODO Auxiliar: Voltar para a tela inicial
+    public void onVoltarTelaInicial(ActionEvent actionEvent) {
+        abrirTela("/view/menu-inicial.fxml", "Menu Inicial");
+    }
+    //Método Auxiliar
+    private void atualizarTabelaDisponibilidades(String idMedico) {
+        colInicio.setCellValueFactory(new PropertyValueFactory<>("dataHoraInicio"));
+        colFim.setCellValueFactory(new PropertyValueFactory<>("dataHoraFim"));
+        colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
+
+        tabelaDisponibilidades.getItems().setAll(
+                sistema.getConsultas(idMedico).stream()
+                        .filter(c -> "DISPONIVEL".equals(c.getStatus()))
+                        .collect(Collectors.toList())
+        );
+    }
+
+    public void onMarcarConsultaMedico(ActionEvent actionEvent) {
+        abrirTela("/view/tela-consulta-medico.fxml", "Marcar Consulta");
+    }
+
+    public void onCancelarConsulta(ActionEvent actionEvent) {
+    }
+
+    public void onVerAgenda(ActionEvent actionEvent) {
+    }
+
+    public void onAgendarConsultaPaciente(ActionEvent actionEvent) {
+    }
+
+    public void onCancelarConsultaPaciente(ActionEvent actionEvent) {
+    }
+
+    public void onVerConsultasPaciente(ActionEvent actionEvent) {
+    }
+
+    public void onCadastrarDisponibilidade(ActionEvent actionEvent) {
+        try {
+            String idMedico = AppContext.usuarioLogadoId;
+            if (idMedico == null || idMedico.isEmpty()) {
+                mostrarAlerta(Alert.AlertType.ERROR, "Nenhum médico está logado.");
+                return;
+            }
+
+            // Validar campos
+            if (dataInicioPicker.getValue() == null || horaInicioField.getText().isEmpty() ||
+                    dataFimPicker.getValue() == null || horaFimField.getText().isEmpty()) {
+                mostrarAlerta(Alert.AlertType.WARNING, "Preencha todos os campos");
+                return;
+            }
+
+            // Converter para LocalDateTime
+            LocalDateTime inicio = LocalDateTime.of(
+                    dataInicioPicker.getValue(),
+                    LocalTime.parse(horaInicioField.getText())
+            );
+
+            LocalDateTime fim = LocalDateTime.of(
+                    dataFimPicker.getValue(),
+                    LocalTime.parse(horaFimField.getText())
+            );
+
+            // Cadastrar no sistema
+            sistema.cadastrarDisponibilidade(idMedico, inicio, fim);
+            // Atualizar tabela
+            atualizarTabelaDisponibilidades(idMedico);
+
+            mostrarAlerta(Alert.AlertType.INFORMATION, "Disponibilidade cadastrada!");
+
+        } catch (DateTimeParseException e) {
+            mostrarAlerta(Alert.AlertType.ERROR, "Formato de hora inválido (use HH:mm)");
+        } catch (Exception e) {
+            mostrarAlerta(Alert.AlertType.ERROR, "Erro: " + e.getMessage());
+        }
+    }
+
+
+    public static class TelaPaciente {
     }
 }
 
