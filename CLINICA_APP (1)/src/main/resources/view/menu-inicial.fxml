@@ -15,7 +15,7 @@
     <Label text="Seja bem-vindo!" style="-fx-font-size: 22px; -fx-font-weight: bold;" />
     <Label text="Digite o id de seu usuario:" style="-fx-font-size: 14px;" />
     <TextField fx:id="campoNomeUsuario" promptText="ID de usuário" />
-    <Button text="avançar" onAction="#verificarUsuarioEAvancar" prefWidth="200" />
+    <Button text="Avançar" onAction="#verificarUsuarioEAvancar" prefWidth="200" />
     <Button text="Ou clique aqui para cadastrar" onAction="#irparaCadastro" prefWidth="200" />
 
 </VBox>
