@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane prefHeight="400" prefWidth="600" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="view.TelaAgendarConsulta">
+   <children>
+      <VBox alignment="TOP_CENTER" layoutX="14.0" layoutY="39.0" spacing="10">
+         <Label style="-fx-font-size: 18px; -fx-font-weight: bold;" text="Área do Paciente" />
+         <HBox spacing="5">
+            <ComboBox fx:id="comboEspecialidades" prefHeight="25.0" prefWidth="260.0" promptText="Selecione a Especialidade" />
+         </HBox>
+         <Label prefWidth="139.0" text="Consultas Disponíveis" />
+         <ListView fx:id="listaConsultasDisponiveis" prefHeight="200.0" prefWidth="572.0" />
+         <Button text="Agendar Consulta Selecionada" />
+      </VBox>
+      <Button layoutX="14.0" layoutY="14.0" text="Voltar ao Menu Principal" />
+   </children>
+</AnchorPane>
