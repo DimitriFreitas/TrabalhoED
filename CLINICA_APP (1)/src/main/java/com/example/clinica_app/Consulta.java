@@ -48,4 +48,12 @@ public class Consulta {
         if (status.equals("REALIZADA")) throw new IllegalStateException("Consulta já realizada");
         status = "CANCELADA";
     }
+
+    @Override
+    public String toString() {
+        return String.format("%s - %s",
+            dataHoraInicio.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
+            dataHoraFim.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"))
+        );
+    }
 }
