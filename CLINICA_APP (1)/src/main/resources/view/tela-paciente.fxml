@@ -12,10 +12,11 @@
          <Label style="-fx-font-size: 18px; -fx-font-weight: bold;" text="Área do Paciente">
             <VBox.margin>
                <Insets />
-            </VBox.margin></Label>
-         <Button fx:id="btnAgendarConsultas" text="Agendar Consultas" />
-         <Button fx:id="btnMinhasConsultas" text="Minhas Consultas" />
+            </VBox.margin>
+         </Label>
+         <Button fx:id="btnAgendarConsultas" text="Agendar Consultas" onAction="#abrirTelaAgendarConsulta"/>
+         <Button fx:id="btnMinhasConsultas" text="Minhas Consultas" onAction="#abrirTelaMinhasConsultas"/>
       </VBox>
-      <Button alignment="TOP_LEFT" layoutX="20.0" layoutY="20.0" onAction="#onCancelarConsulta" text="Voltar ao Menu Principal" />
+      <Button alignment="TOP_LEFT" layoutX="20.0" layoutY="20.0" onAction="#onVoltarTelaInicial" text="Voltar ao Menu Principal" />
    </children>
 </AnchorPane>

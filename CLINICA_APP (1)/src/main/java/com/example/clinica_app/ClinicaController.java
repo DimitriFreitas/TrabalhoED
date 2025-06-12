@@ -92,13 +92,17 @@ public class ClinicaController {
     }
 
     @FXML
-    public void abrirTelaAgendarConsulta() {
-        abrirTela("/view/tela-agendar-consultas.fxml", "Agendar Nova Consulta");
+    public void abrirTelaAgendarConsulta(ActionEvent event) {
+        abrirTela("/view/tela-agendar-consulta.fxml", "Agendar Nova Consulta");
+        Stage stageAtual = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        stageAtual.close();
     }
 
     @FXML
-    public void abrirTelaMinhasConsultas() {
+    public void abrirTelaMinhasConsultas(ActionEvent event) {
         abrirTela("/view/tela-minhas-consultas.fxml", "Minhas Consultas");
+        Stage stageAtual = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        stageAtual.close();
     }
 
     // MÉTODO 2: Cadastrar Paciente
@@ -238,6 +242,12 @@ public class ClinicaController {
     //MÉTODO Auxiliar: Voltar para a tela inicial
     public void onVoltarTelaInicial(ActionEvent actionEvent) {
         abrirTela("/view/menu-inicial.fxml", "Menu Inicial");
+        Stage stageAtual = (Stage) ((Node) actionEvent.getSource()).getScene().getWindow();
+        stageAtual.close();
+    }
+    //MÉTODO Auxiliar: Voltar para a tela paciente
+    public void onVoltarTelaPaciente(ActionEvent actionEvent) {
+        abrirTela("/view/tela-paciente.fxml", "Tela Paciente");
         Stage stageAtual = (Stage) ((Node) actionEvent.getSource()).getScene().getWindow();
         stageAtual.close();
     }

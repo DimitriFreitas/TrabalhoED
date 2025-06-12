@@ -13,6 +13,6 @@
          <ListView fx:id="listaMinhasConsultas" prefHeight="200" prefWidth="572.0" />
          <Button onAction="#onCancelarConsultaPaciente" text="Cancelar Consulta Selecionada" />
       </VBox>
-      <Button onAction="#onVoltarTelaInicial" layoutX="13.0" layoutY="13.0" text="Voltar" />
+      <Button onAction="#onVoltarTelaPaciente" layoutX="13.0" layoutY="13.0" text="Voltar" />
    </children>
 </AnchorPane>

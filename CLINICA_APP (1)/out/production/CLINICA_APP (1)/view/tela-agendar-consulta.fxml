@@ -19,6 +19,6 @@
          <ListView fx:id="listaDisponibilidades" prefHeight="200.0" prefWidth="572.0" />
          <Button onAction="#onAgendarConsultaPaciente" text="Agendar Consulta Selecionada" />
       </VBox>
-      <Button onAction="#onVoltarTelaInicial" layoutX="14.0" layoutY="14.0" text="Voltar" />
+      <Button onAction="#onVoltarTelaPaciente" layoutX="14.0" layoutY="14.0" text="Voltar" />
    </children>
 </AnchorPane>
