@@ -1,7 +1,10 @@
 package com.example.clinica_app;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class SistemaAgendamento {
     private Map<String, Paciente> pacientes = new HashMap<>();
@@ -24,21 +27,23 @@ public class SistemaAgendamento {
         medicos.put(medico.getIdMedico(), medico);
         agendas.put(medico.getIdMedico(), new TreeMap<>());
     }
-   // Método para cadastrar a disponibilidade de um médico
+
+    // Cadastrar disponibilidade de um médico
     public void cadastrarDisponibilidade(String idMedico, LocalDateTime inicio, LocalDateTime fim) {
         Medico medico = medicos.get(idMedico);
+        if (medico == null) throw new IllegalArgumentException("Médico não encontrado.");
         TreeMap<LocalDateTime, Consulta> agenda = agendas.get(idMedico);
-
         if (agenda.containsKey(inicio)) throw new IllegalStateException("Horário já cadastrado");
 
         Consulta disponibilidade = new Consulta(UUID.randomUUID().toString(), null, medico, inicio, fim);
         disponibilidade.setStatus("DISPONIVEL");
-
         agenda.put(inicio, disponibilidade);
     }
-    // Método para agendar uma consulta
-    public void agendarConsulta(String idPaciente, String idMedico, LocalDateTime inicio) {
+
+    // Agendar uma consulta
+    public void agendarConsulta(String idPaciente, String idMedico, LocalDateTime inicio, LocalDateTime fim) {
         Paciente paciente = pacientes.get(idPaciente);
+        if (paciente == null) throw new IllegalArgumentException("Paciente não encontrado.");
         TreeMap<LocalDateTime, Consulta> agenda = agendas.get(idMedico);
         Consulta consulta = agenda.get(inicio);
 
@@ -50,43 +55,65 @@ public class SistemaAgendamento {
         paciente.adicionarConsultaAoHistorico(consulta);
     }
 
-
-
-    public boolean cancelarConsultaPorPaciente(String idPaciente, String idConsulta) {
-        for (TreeMap<LocalDateTime, Consulta> agenda : agendas.values()) {
-            for (Map.Entry<LocalDateTime, Consulta> entry : agenda.entrySet()) {
-                Consulta consulta = entry.getValue();
-                if (consulta.getIdConsulta().equals(idConsulta) &&
-                    consulta.getPaciente().getIdPaciente().equals(idPaciente)) {
-
-                    agenda.remove(entry.getKey());
-                    
-                    consulta.getPaciente().removerConsultaDoHistorico(idConsulta);
-                    return true;
-                }
-            }
+    // Cancelar consulta por paciente
+    public void cancelarConsultaPorPaciente(Consulta consulta) {
+        if (consulta == null || consulta.getMedico() == null) {
+            throw new IllegalArgumentException("Consulta ou médico inválido.");
         }
-        return false;
+        consulta.setStatus("DISPONIVEL");
+        if (consulta.getPaciente() != null) {
+            consulta.getPaciente().removerConsultaDoHistorico(consulta.getIdConsulta());
+        }
+        consulta.setPaciente(null);
     }
 
+    // Cancelar consulta por médico
     public boolean cancelarConsultaPorMedico(String idMedico, String idConsulta) {
         TreeMap<LocalDateTime, Consulta> agenda = agendas.get(idMedico);
         if (agenda == null) return false;
 
-        for (Map.Entry<LocalDateTime, Consulta> entry : agenda.entrySet()) {
+        Iterator<Map.Entry<LocalDateTime, Consulta>> it = agenda.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<LocalDateTime, Consulta> entry = it.next();
             Consulta consulta = entry.getValue();
             if (consulta.getIdConsulta().equals(idConsulta) &&
-                consulta.getMedico().getIdMedico().equals(idMedico)) {
+                    consulta.getMedico().getIdMedico().equals(idMedico)) {
 
-                agenda.remove(entry.getKey());
-                consulta.getPaciente().removerConsultaDoHistorico(idConsulta);
+                if (consulta.getPaciente() != null) {
+                    consulta.getPaciente().removerConsultaDoHistorico(idConsulta);
+                }
+                it.remove();
                 return true;
             }
         }
         return false;
     }
 
+    // Retorna todos os médicos
+    public List<Medico> getTodosMedicos() {
+        return new ArrayList<>(medicos.values());
+    }
+
+    // Retorna todas as consultas de um paciente
+    public List<Consulta> getConsultasPaciente(String idPaciente) {
+        return agendas.values().stream()
+                .flatMap(agenda -> agenda.values().stream())
+                .filter(c -> c.getPaciente() != null && c.getPaciente().getIdPaciente().equals(idPaciente))
+                .collect(Collectors.toList());
+    }
+
+    // Retorna todas as consultas de um médico
     public List<Consulta> getConsultas(String idMedico) {
-        return new ArrayList<>(agendas.get(idMedico).values());
+        TreeMap<LocalDateTime, Consulta> agenda = agendas.get(idMedico);
+        if (agenda == null) return Collections.emptyList();
+        return new ArrayList<>(agenda.values());
+    }
+
+    // Retorna todas as consultas disponíveis
+    public List<Consulta> getTodasConsultasDisponiveis() {
+        return agendas.values().stream()
+                .flatMap(agenda -> agenda.values().stream())
+                .filter(consulta -> "DISPONIVEL".equals(consulta.getStatus()))
+                .collect(Collectors.toList());
     }
 }

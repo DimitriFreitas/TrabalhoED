@@ -1,27 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
+<?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<?import javafx.geometry.Insets?>
-<VBox spacing="10" xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.example.clinica_app.ClinicaController"
-            prefHeight="400.0" prefWidth="600.0">
+<VBox prefHeight="400.0" prefWidth="600.0" spacing="10" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.clinica_app.ClinicaController">
     <padding>
-        <Insets top="20" right="20" bottom="20" left="20"/>
+        <Insets bottom="20" left="20" right="20" top="20" />
     </padding>
 
-    <Label text="Cadastro de Paciente" style="-fx-font-size: 18px; -fx-font-weight: bold;" />
+    <Label style="-fx-font-size: 18px; -fx-font-weight: bold;" text="Cadastro de Paciente" />
 
     <TextField fx:id="campoIdPaciente" promptText="ID do Paciente" />
     <TextField fx:id="campoNomePaciente" promptText="Nome" />
     <TextField fx:id="campoIdadePaciente" promptText="Idade" />
-    <TextField fx:id="campoContatoPaciente" promptText="Contato" />
+    <TextField fx:id="campoContatoPaciente" promptText="Número de Contato" />
 
-    <Button text="Cadastrar" onAction="#onCadastrarPaciente" />
+    <Button onAction="#onCadastrarPaciente" text="Cadastrar" />
 
 </VBox>

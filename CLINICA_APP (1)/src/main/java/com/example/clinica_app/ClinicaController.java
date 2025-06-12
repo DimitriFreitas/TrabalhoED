@@ -4,19 +4,17 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.DatePicker;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TableColumn;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class ClinicaController {
@@ -36,17 +34,20 @@ public class ClinicaController {
     @FXML private TextField campoEspecialidadeMedico;
 
     // Campos de Cadastro de Disponibilidade
-    @FXML private DatePicker dataInicioPicker;
-    @FXML private TextField horaInicioField;
-    @FXML private DatePicker dataFimPicker;
-    @FXML private TextField horaFimField;
+    @FXML private DatePicker dataDisponibilidade;
+    @FXML private TextField horaInicio;
+    @FXML private TextField horaFim;
     @FXML private TableView<Consulta> tabelaDisponibilidades;
     @FXML private TableColumn<Consulta, LocalDateTime> colInicio;
     @FXML private TableColumn<Consulta, LocalDateTime> colFim;
     @FXML private TableColumn<Consulta, String> colStatus;
 
-    // Variável para armazenar o ID do médico logado
-    private String idMedicoLogado;
+    // --- CAMPOS FXML DA TELA "AGENDAR CONSULTAS" ---
+    @FXML private ComboBox<String> comboEspecialidades; // MUDOU: Agora é de String
+    @FXML private ListView<Consulta> listaDisponibilidades;
+
+    // --- CAMPOS FXML DA TELA "MINHAS CONSULTAS" ---
+    @FXML private ListView<Consulta> listaMinhasConsultas;
 
     // Sistema compartilhado
     private final SistemaAgendamento sistema = AppContext.sistema;
@@ -64,6 +65,7 @@ public class ClinicaController {
         }
 
         if (sistema.isPaciente(id)) {
+            AppContext.usuarioLogadoId = id;
             abrirTela("/view/tela-paciente.fxml", "Área do Paciente");
         } else if (sistema.isMedico(id)) {
             AppContext.usuarioLogadoId=id; // ← salva o ID do médico logado
@@ -87,6 +89,16 @@ public class ClinicaController {
     @FXML
     private void irparaCadastro(){
         abrirTela("/view/menu-cadastro.fxml", "Cadastro de Paciente ou Médico");
+    }
+
+    @FXML
+    public void abrirTelaAgendarConsulta() {
+        abrirTela("/view/tela-agendar-consultas.fxml", "Agendar Nova Consulta");
+    }
+
+    @FXML
+    public void abrirTelaMinhasConsultas() {
+        abrirTela("/view/tela-minhas-consultas.fxml", "Minhas Consultas");
     }
 
     // MÉTODO 2: Cadastrar Paciente
@@ -168,6 +180,54 @@ public class ClinicaController {
         }
     }
 
+    @FXML
+    public void initialize() {
+        // --- LÓGICA PARA A TELA "AGENDAR CONSULTAS" ---
+        if (comboEspecialidades != null && listaDisponibilidades != null) {
+            // 1. Pega todas as especialidades únicas dos médicos e as adiciona no ComboBox
+            List<String> especialidadesUnicas = sistema.getTodosMedicos().stream()
+                    .map(Medico::getEspecialidade)
+                    .distinct()
+                    .collect(Collectors.toList());
+            comboEspecialidades.getItems().setAll(especialidadesUnicas);
+
+            // 2. Adiciona um "listener" que atualiza os horários disponíveis sempre que uma especialidade é selecionada
+            comboEspecialidades.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null) {
+                    atualizarListaDisponibilidadesPorEspecialidade(newVal);
+                }
+            });
+        }
+
+        // --- LÓGICA PARA A TELA "MINHAS CONSULTAS" ---
+        if (listaMinhasConsultas != null) {
+            atualizarListaMinhasConsultas();
+        }
+
+        // --- LÓGICA PARA A TELA DO MÉDICO ---
+        if (tabelaDisponibilidades != null) {
+            colInicio.setCellValueFactory(new PropertyValueFactory<>("dataHoraInicio"));
+            colFim.setCellValueFactory(new PropertyValueFactory<>("dataHoraFim"));
+            colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
+            atualizarTabelaDisponibilidades(AppContext.usuarioLogadoId);
+        }
+    }
+
+    private void carregarEspecialidade() {
+        List<Medico> medicos = AppContext.sistema.getTodosMedicos();
+        for (Medico medico : medicos) {
+            comboEspecialidades.getItems().add(medico.getIdMedico());
+        }
+    }
+
+    private void carregarConsultas() {
+        listaMinhasConsultas.getItems().clear();
+        List<Consulta> consultas = AppContext.sistema.getConsultasPaciente(AppContext.usuarioLogadoId);
+        for (Consulta consulta : consultas) {
+            listaMinhasConsultas.getItems().add(consulta);
+        }
+    }
+
     // MÉTODO AUXILIAR: mostrar alertas
     private void mostrarAlerta(Alert.AlertType tipo, String msg) {
         Alert alert = new Alert(tipo);
@@ -178,6 +238,8 @@ public class ClinicaController {
     //MÉTODO Auxiliar: Voltar para a tela inicial
     public void onVoltarTelaInicial(ActionEvent actionEvent) {
         abrirTela("/view/menu-inicial.fxml", "Menu Inicial");
+        Stage stageAtual = (Stage) ((Node) actionEvent.getSource()).getScene().getWindow();
+        stageAtual.close();
     }
     //Método Auxiliar
     private void atualizarTabelaDisponibilidades(String idMedico) {
@@ -188,6 +250,12 @@ public class ClinicaController {
         tabelaDisponibilidades.getItems().setAll(
                 sistema.getConsultas(idMedico).stream()
                         .filter(c -> "DISPONIVEL".equals(c.getStatus()))
+                        .map(c -> new Consulta(
+                                c.getIdConsulta(),
+                                c.getMedico(),
+                                c.getDataHoraInicio(),
+                                c.getDataHoraFim()
+                        ))
                         .collect(Collectors.toList())
         );
     }
@@ -202,57 +270,135 @@ public class ClinicaController {
     public void onVerAgenda(ActionEvent actionEvent) {
     }
 
+    // O método onAgendarConsultaPaciente não precisa mudar, pois a lógica dele já era pegar uma Consulta da lista.
+    @FXML
     public void onAgendarConsultaPaciente(ActionEvent actionEvent) {
-    }
+        Consulta consultaDisponivel = listaDisponibilidades.getSelectionModel().getSelectedItem();
+        if (consultaDisponivel == null) {
+            mostrarAlerta(Alert.AlertType.WARNING, "Selecione um horário disponível para agendar.");
+            return;
+        }
 
-    public void onCancelarConsultaPaciente(ActionEvent actionEvent) {
-    }
-
-    public void onVerConsultasPaciente(ActionEvent actionEvent) {
-    }
-
-    public void onCadastrarDisponibilidade(ActionEvent actionEvent) {
         try {
-            String idMedico = AppContext.usuarioLogadoId;
-            if (idMedico == null || idMedico.isEmpty()) {
-                mostrarAlerta(Alert.AlertType.ERROR, "Nenhum médico está logado.");
-                return;
-            }
-
-            // Validar campos
-            if (dataInicioPicker.getValue() == null || horaInicioField.getText().isEmpty() ||
-                    dataFimPicker.getValue() == null || horaFimField.getText().isEmpty()) {
-                mostrarAlerta(Alert.AlertType.WARNING, "Preencha todos os campos");
-                return;
-            }
-
-            // Converter para LocalDateTime
-            LocalDateTime inicio = LocalDateTime.of(
-                    dataInicioPicker.getValue(),
-                    LocalTime.parse(horaInicioField.getText())
+            sistema.agendarConsulta(
+                    AppContext.usuarioLogadoId,
+                    consultaDisponivel.getMedico().getIdMedico(),
+                    consultaDisponivel.getDataHoraInicio(),
+                    consultaDisponivel.getDataHoraFim()
             );
-
-            LocalDateTime fim = LocalDateTime.of(
-                    dataFimPicker.getValue(),
-                    LocalTime.parse(horaFimField.getText())
-            );
-
-            // Cadastrar no sistema
-            sistema.cadastrarDisponibilidade(idMedico, inicio, fim);
-            // Atualizar tabela
-            atualizarTabelaDisponibilidades(idMedico);
-
-            mostrarAlerta(Alert.AlertType.INFORMATION, "Disponibilidade cadastrada!");
-
-        } catch (DateTimeParseException e) {
-            mostrarAlerta(Alert.AlertType.ERROR, "Formato de hora inválido (use HH:mm)");
-        } catch (Exception e) {
-            mostrarAlerta(Alert.AlertType.ERROR, "Erro: " + e.getMessage());
+            mostrarAlerta(Alert.AlertType.INFORMATION, "Consulta agendada com sucesso!");
+            // Atualiza a lista de disponibilidades para a especialidade que estava selecionada
+            atualizarListaDisponibilidadesPorEspecialidade(comboEspecialidades.getValue());
+        } catch (IllegalStateException e) {
+            mostrarAlerta(Alert.AlertType.ERROR, "Erro ao agendar: " + e.getMessage());
         }
     }
 
+    // O método onCancelarConsultaPaciente também não precisa mudar.
+    @FXML
+    public void onCancelarConsultaPaciente(ActionEvent actionEvent) {
+        Consulta minhaConsulta = listaMinhasConsultas.getSelectionModel().getSelectedItem();
+        if (minhaConsulta == null) {
+            mostrarAlerta(Alert.AlertType.WARNING, "Selecione uma de suas consultas para cancelar.");
+            return;
+        }
 
-    public static class TelaPaciente {
+        if (minhaConsulta.getPaciente() == null || !minhaConsulta.getPaciente().getIdPaciente().equals(AppContext.usuarioLogadoId)) {
+            mostrarAlerta(Alert.AlertType.ERROR, "Esta não é uma consulta sua.");
+            return;
+        }
+
+        sistema.cancelarConsultaPorPaciente(minhaConsulta);
+        mostrarAlerta(Alert.AlertType.INFORMATION, "Consulta cancelada com sucesso!");
+        atualizarListaMinhasConsultas(); // Atualiza a lista para remover a consulta cancelada
+
+        mostrarAlerta(Alert.AlertType.INFORMATION, "Consulta cancelada com sucesso!");
+
+        // Atualiza a lista para remover a consulta cancelada
+        atualizarListaConsultasPaciente();
+    }
+
+/**
+ * Método auxiliar para carregar/atualizar a lista de consultas do paciente na tela.
+ * Ele deve ser chamado no início e após qualquer agendamento/cancelamento.
+ */
+private void atualizarListaConsultasPaciente() {
+    if (AppContext.usuarioLogadoId != null) {
+        listaMinhasConsultas.getItems().clear();
+        List<Consulta> consultas = sistema.getConsultasPaciente(AppContext.usuarioLogadoId);
+        listaMinhasConsultas.getItems().setAll(consultas);
     }
 }
 
+/** NOVO MÉTODO: Atualiza a lista de horários disponíveis filtrando por especialidade. */
+private void atualizarListaDisponibilidadesPorEspecialidade(String especialidade) {
+    // Pega TODAS as consultas disponíveis de TODOS os médicos
+    List<Consulta> disponibilidadesTotais = sistema.getTodasConsultasDisponiveis();
+
+    // Filtra essa lista para mostrar apenas as da especialidade selecionada
+    List<Consulta> disponibilidadesFiltradas = disponibilidadesTotais.stream()
+            .filter(c -> c.getMedico().getEspecialidade().equals(especialidade))
+            .collect(Collectors.toList());
+
+    listaDisponibilidades.getItems().setAll(disponibilidadesFiltradas);
+}
+
+/** Atualiza a lista de consultas que o paciente logado já agendou. (Sem alteração) */
+private void atualizarListaMinhasConsultas() {
+    if (AppContext.usuarioLogadoId != null) {
+        listaMinhasConsultas.getItems().setAll(sistema.getConsultasPaciente(AppContext.usuarioLogadoId));
+    }
+}
+
+public void onVerConsultasPaciente(ActionEvent actionEvent) {
+}
+public void onCancelarDisponibilidade(ActionEvent actionEvent) {
+}
+
+public void onCadastrarDisponibilidade(ActionEvent actionEvent) {
+    try {
+        String idMedico = AppContext.usuarioLogadoId;
+        if (idMedico == null || idMedico.isEmpty()) {
+            mostrarAlerta(Alert.AlertType.ERROR, "Nenhum médico está logado.");
+            return;
+        }
+
+        // Validar campos
+        if (dataDisponibilidade.getValue() == null ||
+                horaInicio.getText().isEmpty() ||
+                horaFim.getText().isEmpty()) {
+            mostrarAlerta(Alert.AlertType.WARNING, "Preencha todos os campos.");
+            return;
+        }
+
+        // Converter data e hora
+        LocalDate data = dataDisponibilidade.getValue();
+        LocalTime horaInicioParsed = LocalTime.parse(horaInicio.getText());
+        LocalTime horaFimParsed = LocalTime.parse(horaFim.getText());
+
+        LocalDateTime inicio = LocalDateTime.of(data, horaInicioParsed);
+        LocalDateTime fim = LocalDateTime.of(data, horaFimParsed);
+
+        if (!fim.isAfter(inicio)) {
+            mostrarAlerta(Alert.AlertType.WARNING, "A hora de fim deve ser após a hora de início.");
+            return;
+        }
+
+        // Cadastrar no sistema
+        sistema.cadastrarDisponibilidade(idMedico, inicio, fim);
+
+        // Atualizar tabela
+        atualizarTabelaDisponibilidades(idMedico);
+
+        mostrarAlerta(Alert.AlertType.INFORMATION, "Disponibilidade cadastrada com sucesso!");
+
+    } catch (DateTimeParseException e) {
+        mostrarAlerta(Alert.AlertType.ERROR, "Formato de hora inválido (use HH:mm).");
+    } catch (Exception e) {
+        mostrarAlerta(Alert.AlertType.ERROR, "Erro ao cadastrar: " + e.getMessage());
+    }
+}
+
+
+
+}
