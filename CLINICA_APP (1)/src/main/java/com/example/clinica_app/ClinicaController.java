@@ -9,10 +9,12 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
+import javafx.beans.property.SimpleStringProperty;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -41,6 +43,26 @@ public class ClinicaController {
     @FXML private TableColumn<Consulta, LocalDateTime> colInicio;
     @FXML private TableColumn<Consulta, LocalDateTime> colFim;
     @FXML private TableColumn<Consulta, String> colStatus;
+
+    // Campos para a tabela de disponibilidades (agenda)
+    @FXML private TableView<Consulta> tabelaAgenda;
+    @FXML private TableColumn<Consulta, String> colAgendaData;
+    @FXML private TableColumn<Consulta, String> colAgendaHora;
+
+    // Campos para a tabela de consultas agendadas
+    @FXML private TableView<Consulta> tabelaConsultas;
+    @FXML private TableColumn<Consulta, String> colConsultaData;
+    @FXML private TableColumn<Consulta, String> colConsultaHora;
+    @FXML private TableColumn<Consulta, String> colConsultaPaciente;
+    @FXML private TableColumn<Consulta, String> colConsultaNumero;
+    @FXML private TableColumn<Consulta, String> colConsultaStatus;
+    @FXML private TextArea motivoCancelamento;
+
+    @FXML private TableView<Consulta> tabelaMinhasConsultas;
+    @FXML private TableColumn<Consulta, String> colMinhasConsultaData;
+    @FXML private TableColumn<Consulta, String> colMinhasConsultaHora;
+    @FXML private TableColumn<Consulta, String> colMinhasConsultaStatus;
+    @FXML private TableColumn<Consulta, String> colMinhasConsultaMotivo;
 
     // --- CAMPOS FXML DA TELA "AGENDAR CONSULTAS" ---
     @FXML private ComboBox<String> comboEspecialidades; // MUDOU: Agora é de String
@@ -214,6 +236,9 @@ public class ClinicaController {
 
     @FXML
     public void initialize() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        DateTimeFormatter horaFormatter = DateTimeFormatter.ofPattern("HH:mm");
+
         // --- LÓGICA PARA A TELA "AGENDAR CONSULTAS" ---
         if (comboEspecialidades != null && listaDisponibilidades != null) {
             List<String> especialidadesUnicas = sistema.getTodosMedicos().stream()
@@ -229,11 +254,60 @@ public class ClinicaController {
             });
         }
 
-        if (listaAgenda != null) {
-            atualizarListaAgenda(AppContext.usuarioLogadoId);
+        if (tabelaMinhasConsultas != null) {
+            colMinhasConsultaData.setCellValueFactory(cellData ->
+                    new SimpleStringProperty(cellData.getValue().getDataHoraInicio().toLocalDate().format(formatter))
+            );
+            colMinhasConsultaHora.setCellValueFactory(cellData -> {
+                String inicio = cellData.getValue().getDataHoraInicio().toLocalTime().format(horaFormatter);
+                String fim = cellData.getValue().getDataHoraFim().toLocalTime().format(horaFormatter);
+                return new SimpleStringProperty(inicio + " - " + fim);
+            });
+            colMinhasConsultaStatus.setCellValueFactory(cellData ->
+                    new SimpleStringProperty(cellData.getValue().getStatus())
+            );
+            colMinhasConsultaMotivo.setCellValueFactory(cellData ->
+                    new SimpleStringProperty(cellData.getValue().getMotivoCancelamento() != null ? cellData.getValue().getMotivoCancelamento() : "")
+            );
+            tabelaMinhasConsultas.getItems().setAll(
+                    sistema.getConsultasPaciente(AppContext.usuarioLogadoId).stream()
+                            .filter(c -> "AGENDADA".equals(c.getStatus()) ||
+                                    ("CANCELADA".equals(c.getStatus()) && c.getMotivoCancelamento() != null && !c.getMotivoCancelamento().isEmpty()))
+                            .collect(Collectors.toList())
+            );
         }
-        if (listaConsultas != null) {
-            atualizarListaConsultasMedico(AppContext.usuarioLogadoId);
+
+        if (tabelaAgenda != null) {
+            colAgendaData.setCellValueFactory(cellData ->
+                    new SimpleStringProperty(cellData.getValue().getDataHoraInicio().toLocalDate().format(formatter))
+            );
+            colAgendaHora.setCellValueFactory(cellData -> {
+                String inicio = cellData.getValue().getDataHoraInicio().toLocalTime().format(horaFormatter);
+                String fim = cellData.getValue().getDataHoraFim().toLocalTime().format(horaFormatter);
+                return new SimpleStringProperty(inicio + " - " + fim);
+            });
+            atualizarTabelaAgenda(AppContext.usuarioLogadoId);
+        }
+
+        if (tabelaConsultas != null) {
+            colConsultaData.setCellValueFactory(cellData ->
+                    new SimpleStringProperty(cellData.getValue().getDataHoraInicio().toLocalDate().format(formatter))
+            );
+            colConsultaHora.setCellValueFactory(cellData -> {
+                String inicio = cellData.getValue().getDataHoraInicio().toLocalTime().format(horaFormatter);
+                String fim = cellData.getValue().getDataHoraFim().toLocalTime().format(horaFormatter);
+                return new SimpleStringProperty(inicio + " - " + fim);
+            });
+            colConsultaPaciente.setCellValueFactory(cellData ->
+                    new SimpleStringProperty(cellData.getValue().getPaciente() != null ? cellData.getValue().getPaciente().getNome() : ""));
+            colConsultaNumero.setCellValueFactory(cellData ->
+                    new SimpleStringProperty(
+                            cellData.getValue().getPaciente() != null
+                                    ? cellData.getValue().getPaciente().getContato()
+                                    : ""
+                    )
+            );
+            atualizarTabelaConsultasMedico(AppContext.usuarioLogadoId);
         }
 
         // --- LÓGICA PARA A TELA "MINHAS CONSULTAS" ---
@@ -252,14 +326,14 @@ public class ClinicaController {
                 @Override
                 protected void updateItem(LocalDateTime item, boolean empty) {
                     super.updateItem(item, empty);
-                    setText(empty || item == null ? "" : item.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+                    setText(empty || item == null ? "" : item.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
                 }
             });
             colFim.setCellFactory(column -> new TableCell<Consulta, LocalDateTime>() {
                 @Override
                 protected void updateItem(LocalDateTime item, boolean empty) {
                     super.updateItem(item, empty);
-                    setText(empty || item == null ? "" : item.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+                    setText(empty || item == null ? "" : item.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
                 }
             });
 
@@ -270,6 +344,12 @@ public class ClinicaController {
         if (listaAgenda != null) {
             atualizarListaAgenda(AppContext.usuarioLogadoId);
         }
+    }
+
+    public List<Consulta> getConsultasPaciente(String idPaciente) {
+        return sistema.getConsultasPaciente(idPaciente).stream()
+                .filter(c -> c.getPaciente() != null && c.getPaciente().getIdPaciente().equals(idPaciente))
+                .collect(Collectors.toList());
     }
 
     private void carregarEspecialidade() {
@@ -325,11 +405,62 @@ public class ClinicaController {
         );
     }
 
-    public void onMarcarConsultaMedico(ActionEvent actionEvent) {
-        abrirTela("/view/tela-consulta-medico.fxml", "Marcar Consulta");
+    @FXML
+    public void onCancelarConsultaMinhasConsultas(ActionEvent event) {
+        Consulta consultaSelecionada = tabelaMinhasConsultas.getSelectionModel().getSelectedItem();
+        if (consultaSelecionada == null) {
+            mostrarAlerta(Alert.AlertType.WARNING, "Selecione uma consulta para cancelar.");
+            return;
+        }
+        if (!"AGENDADA".equals(consultaSelecionada.getStatus())) {
+            mostrarAlerta(Alert.AlertType.WARNING, "Só é possível cancelar consultas agendadas.");
+            return;
+        }
+        sistema.cancelarConsultaPorPaciente(consultaSelecionada);
+        mostrarAlerta(Alert.AlertType.INFORMATION, "Consulta cancelada com sucesso!");
+        tabelaMinhasConsultas.getItems().setAll(sistema.getConsultasPaciente(AppContext.usuarioLogadoId));
+    }
+    
+    @FXML
+    public void onRemoverConsultaMinhasConsultas(ActionEvent event) {
+        Consulta consultaSelecionada = tabelaMinhasConsultas.getSelectionModel().getSelectedItem();
+        if (consultaSelecionada == null) {
+            mostrarAlerta(Alert.AlertType.WARNING, "Selecione uma consulta para remover.");
+            return;
+        }
+        if (!"CANCELADA".equals(consultaSelecionada.getStatus())) {
+            mostrarAlerta(Alert.AlertType.WARNING, "Só é possível remover consultas canceladas.");
+            return;
+        }
+        // Remove do histórico do paciente
+        if (consultaSelecionada.getPaciente() != null) {
+            consultaSelecionada.getPaciente().getHistorico().remove(consultaSelecionada);
+        }
+        tabelaMinhasConsultas.getItems().remove(consultaSelecionada);
+        mostrarAlerta(Alert.AlertType.INFORMATION, "Consulta removida com sucesso!");
     }
 
-    public void onCancelarConsulta(ActionEvent actionEvent) {
+    @FXML
+    public void onCancelarConsulta(ActionEvent event) {
+        Consulta consultaSelecionada = tabelaConsultas.getSelectionModel().getSelectedItem();
+        String motivo = motivoCancelamento.getText().trim();
+
+        if (consultaSelecionada == null) {
+            mostrarAlerta(Alert.AlertType.WARNING, "Selecione uma consulta para cancelar.");
+            return;
+        }
+        if (motivo.isEmpty()) {
+            mostrarAlerta(Alert.AlertType.WARNING, "Informe o motivo do cancelamento.");
+            return;
+        }
+
+        consultaSelecionada.setMotivoCancelamento(motivo);
+
+        sistema.cancelarConsultaPorMedico(AppContext.usuarioLogadoId, consultaSelecionada.getIdConsulta());
+        mostrarAlerta(Alert.AlertType.INFORMATION, "Consulta cancelada com sucesso!");
+
+        atualizarTabelaConsultasMedico(AppContext.usuarioLogadoId);
+        motivoCancelamento.clear();
     }
 
     public void onVerAgenda(ActionEvent actionEvent) {
@@ -378,32 +509,31 @@ public class ClinicaController {
         atualizarListaMinhasConsultas(); // Atualiza a lista para remover a consulta cancelada
 
         mostrarAlerta(Alert.AlertType.INFORMATION, "Consulta cancelada com sucesso!");
-
-        // Atualiza a lista para remover a consulta cancelada
-        atualizarListaConsultasPaciente();
     }
 
 /**
- * Método auxiliar para carregar/atualizar a lista de consultas do paciente na tela.
+ * Método auxiliar para carregar/atualizar ata de consultas do paciente na tela.
  * Ele deve ser chamado no início e após qualquer agendamento/cancelamento.
  */
-private void atualizarListaConsultasPaciente() {
-    if (AppContext.usuarioLogadoId != null) {
-        listaMinhasConsultas.getItems().clear();
-        List<Consulta> consultas = sistema.getConsultasPaciente(AppContext.usuarioLogadoId);
-        listaMinhasConsultas.getItems().setAll(consultas);
-    }
-}
-
-private void atualizarListaConsultasMedico(String idMedico) {
-    if (listaConsultas != null) {
-        listaConsultas.getItems().setAll(
+private void atualizarTabelaAgenda(String idMedico) {
+    if (tabelaAgenda != null) {
+        tabelaAgenda.getItems().setAll(
                 sistema.getConsultas(idMedico).stream()
-                        .filter(c -> "AGENDADA".equals(c.getStatus()))
+                        .filter(c -> "DISPONIVEL".equals(c.getStatus()))
                         .collect(Collectors.toList())
         );
     }
 }
+
+    private void atualizarTabelaConsultasMedico(String idMedico) {
+        if (tabelaConsultas != null) {
+            tabelaConsultas.getItems().setAll(
+                    sistema.getConsultas(idMedico).stream()
+                            .filter(c -> "AGENDADA".equals(c.getStatus()))
+                            .collect(Collectors.toList())
+            );
+        }
+    }
 
 /** NOVO MÉTODO: Atualiza a lista de horários disponíveis filtrando por especialidade. */
 private void atualizarListaDisponibilidadesPorEspecialidade(String especialidade) {
@@ -427,8 +557,36 @@ private void atualizarListaMinhasConsultas() {
 
 public void onVerConsultasPaciente(ActionEvent actionEvent) {
 }
-public void onCancelarDisponibilidade(ActionEvent actionEvent) {
-}
+
+    public void onCancelarDisponibilidade(ActionEvent actionEvent) {
+        if (tabelaAgenda != null && tabelaAgenda.getSelectionModel().getSelectedItem() != null) {
+            Consulta disponibilidade = tabelaAgenda.getSelectionModel().getSelectedItem();
+            boolean removido = sistema.cancelarConsultaPorMedico(
+                    AppContext.usuarioLogadoId,
+                    disponibilidade.getIdConsulta()
+            );
+            if (removido) {
+                mostrarAlerta(Alert.AlertType.INFORMATION, "Disponibilidade cancelada com sucesso!");
+                atualizarTabelaAgenda(AppContext.usuarioLogadoId);
+            } else {
+                mostrarAlerta(Alert.AlertType.ERROR, "Não foi possível cancelar a disponibilidade.");
+            }
+        } else if (tabelaDisponibilidades != null && tabelaDisponibilidades.getSelectionModel().getSelectedItem() != null) {
+            Consulta disponibilidade = tabelaDisponibilidades.getSelectionModel().getSelectedItem();
+            boolean removido = sistema.cancelarConsultaPorMedico(
+                    AppContext.usuarioLogadoId,
+                    disponibilidade.getIdConsulta()
+            );
+            if (removido) {
+                mostrarAlerta(Alert.AlertType.INFORMATION, "Disponibilidade cancelada com sucesso!");
+                atualizarTabelaDisponibilidades(AppContext.usuarioLogadoId);
+            } else {
+                mostrarAlerta(Alert.AlertType.ERROR, "Não foi possível cancelar a disponibilidade.");
+            }
+        } else {
+            mostrarAlerta(Alert.AlertType.WARNING, "Selecione uma disponibilidade para cancelar.");
+        }
+    }
 
     public void onCadastrarDisponibilidade(ActionEvent actionEvent) {
         try {
@@ -462,10 +620,14 @@ public void onCancelarDisponibilidade(ActionEvent actionEvent) {
             // Cadastrar no sistema
             sistema.cadastrarDisponibilidade(idMedico, inicio, fim);
 
-            // Atualizar tabela ou lista, dependendo da tela
+            // Atualizar todas as tabelas/listas relevantes
             if (tabelaDisponibilidades != null) {
                 atualizarTabelaDisponibilidades(idMedico);
-            } else if (listaAgenda != null) {
+            }
+            if (tabelaAgenda != null) {
+                atualizarTabelaAgenda(idMedico);
+            }
+            if (listaAgenda != null) {
                 atualizarListaAgenda(idMedico);
             }
 
@@ -488,6 +650,4 @@ public void onCancelarDisponibilidade(ActionEvent actionEvent) {
             );
         }
     }
-
-
 }

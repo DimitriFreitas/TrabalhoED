@@ -49,6 +49,18 @@ public class Consulta {
         status = "CANCELADA";
     }
 
+    private String motivoCancelamento;
+
+    // Getter
+    public String getMotivoCancelamento() {
+        return motivoCancelamento;
+    }
+
+    // Setter
+    public void setMotivoCancelamento(String motivoCancelamento) {
+        this.motivoCancelamento = motivoCancelamento;
+    }
+
     @Override
     public String toString() {
         return String.format("%s - %s",

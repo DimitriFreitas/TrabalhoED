@@ -7,7 +7,7 @@
 <AnchorPane prefHeight="500.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.clinica_app.ClinicaController">
     <children>
         <VBox alignment="TOP_CENTER" spacing="10" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
-            
+
             <Label style="-fx-font-size: 20px; -fx-font-weight: bold;" text="Área do Médico" />
             <Button onAction="#onVoltarTelaInicial" text="Voltar ao Menu Principal">
             <VBox.margin>
@@ -36,14 +36,30 @@
             <HBox spacing="20">
                 <VBox spacing="5">
                     <Label text="Agenda Disponibilidade:" />
-                    <ListView fx:id="listaAgenda" prefHeight="200.0" prefWidth="360.0" />
-                    <Button onAction="#onCancelarDisponibilidade" text="Cancelar Disponibilidade" />
+                <TableView fx:id="tabelaAgenda" prefHeight="200.0" prefWidth="200.0">
+                    <columns>
+                        <TableColumn fx:id="colAgendaData" prefWidth="99.0" text="Data" />
+                        <TableColumn fx:id="colAgendaHora" prefWidth="98.0" text="Hora" />
+                    </columns>
+                </TableView>
+                    <Button onAction="#onCancelarDisponibilidade" prefWidth="200.0" text="Cancelar Disponibilidade" />
                 </VBox>
 
                 <VBox spacing="5">
                     <Label text="Minhas Consultas:" />
-                    <ListView fx:id="listaConsultas" prefHeight="200.0" prefWidth="360.0" />
-   
+                <TableView fx:id="tabelaConsultas" prefHeight="200.0" prefWidth="526.0">
+                    <columns>
+                        <TableColumn fx:id="colConsultaData" maxWidth="73.0" minWidth="73.0" prefWidth="73.0" text="Data" />
+                        <TableColumn fx:id="colConsultaHora" maxWidth="82.0" minWidth="80.0" prefWidth="82.0" text="Hora" />
+                        <TableColumn fx:id="colConsultaPaciente" maxWidth="190.0" minWidth="188.0" prefWidth="188.0" text="Nome" />
+                        <TableColumn fx:id="colConsultaNumero" maxWidth="100.0" minWidth="100.0" prefWidth="100.0" text="Número" />
+                        <TableColumn fx:id="colConsultaStatus" maxWidth="80.0" minWidth="80.0" prefWidth="80.0" text="Status" />
+                    </columns>
+                  <VBox.margin>
+                     <Insets />
+                  </VBox.margin>
+               </TableView>
+
                    <VBox spacing="5">
                        <Label text="Motivo do Cancelamento" />
                        <TextArea fx:id="motivoCancelamento" prefHeight="16.0" prefWidth="200.0" wrapText="true" />
@@ -52,6 +68,9 @@
                   <VBox.margin>
                      <Insets />
                   </VBox.margin></Button>
+               <HBox.margin>
+                  <Insets />
+               </HBox.margin>
                 </VBox>
             <VBox.margin>
                <Insets left="20.0" />

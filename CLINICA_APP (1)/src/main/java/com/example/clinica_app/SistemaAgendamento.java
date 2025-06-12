@@ -67,23 +67,23 @@ public class SistemaAgendamento {
         consulta.setPaciente(null);
     }
 
-    // Cancelar consulta por médico
     public boolean cancelarConsultaPorMedico(String idMedico, String idConsulta) {
         TreeMap<LocalDateTime, Consulta> agenda = agendas.get(idMedico);
         if (agenda == null) return false;
 
-        Iterator<Map.Entry<LocalDateTime, Consulta>> it = agenda.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<LocalDateTime, Consulta> entry = it.next();
-            Consulta consulta = entry.getValue();
+        for (Consulta consulta : agenda.values()) {
             if (consulta.getIdConsulta().equals(idConsulta) &&
                     consulta.getMedico().getIdMedico().equals(idMedico)) {
 
                 if (consulta.getPaciente() != null) {
-                    consulta.getPaciente().removerConsultaDoHistorico(idConsulta);
+                    consulta.setStatus("CANCELADA");
+                    // O motivo já deve ser setado antes de chamar este método
+                    return true;
+                } else {
+                    // Se não tem paciente, pode remover (é só disponibilidade)
+                    agenda.values().remove(consulta);
+                    return true;
                 }
-                it.remove();
-                return true;
             }
         }
         return false;
