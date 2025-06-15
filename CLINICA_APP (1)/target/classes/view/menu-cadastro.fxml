@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox spacing="20" alignment="CENTER" xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.example.clinica_app.ClinicaController">
+
+    <padding>
+        <Insets top="40" right="40" bottom="40" left="40"/>
+    </padding>
+
+    <Label text="Seja bem-vindo!" style="-fx-font-size: 22px; -fx-font-weight: bold;" />
+    <Label text="Você deseja se cadastrar como:" style="-fx-font-size: 14px;" />
+
+    <Button text="Médico" onAction="#onCadastrarMedicoButton" prefWidth="200" />
+    <Button text="Paciente" onAction="#onCadastrarPacienteButton" prefWidth="200" />
+</VBox>

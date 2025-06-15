@@ -420,7 +420,7 @@ public class ClinicaController {
         mostrarAlerta(Alert.AlertType.INFORMATION, "Consulta cancelada com sucesso!");
         tabelaMinhasConsultas.getItems().setAll(sistema.getConsultasPaciente(AppContext.usuarioLogadoId));
     }
-    
+
     @FXML
     public void onRemoverConsultaMinhasConsultas(ActionEvent event) {
         Consulta consultaSelecionada = tabelaMinhasConsultas.getSelectionModel().getSelectedItem();
