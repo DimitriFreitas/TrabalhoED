@@ -3,13 +3,13 @@ package org.example;
 import java.util.*;
 
 public class ArvoreDNS {
-    private Dominio raiz;
+    private final Dominio raiz;
 
     public ArvoreDNS() {
         raiz = new Dominio("raiz", 0, "root");
     }
 
-    // Método para inserir domínio/subdomínio
+    // método para inserir domínio/subdomínio
     public void inserirDominio(String dominioCompleto, int ttl, String tipo) {
         String[] partes = dominioCompleto.split("\\.");
         Dominio atual = raiz;
@@ -21,7 +21,7 @@ public class ArvoreDNS {
         }
     }
 
-    // Mostrar a árvore com indentação
+    // mostrar a árvore com indentação
     public void exibirArvore() {
         exibirRecursivo(raiz, "");
     }
@@ -36,7 +36,7 @@ public class ArvoreDNS {
         }
     }
 
-    // Buscar domínio
+    // buscar domínio
     public boolean buscarDominio(String dominioCompleto) {
         String[] partes = dominioCompleto.split("\\.");
         Dominio atual = raiz;
@@ -55,7 +55,7 @@ public class ArvoreDNS {
         return true;
     }
 
-    // Remover domínio e subdomínios
+    // remover domínio e subdomínios
     public boolean removerDominio(String dominioCompleto) {
         return removerRecursivo(raiz, dominioCompleto.split("\\."), dominioCompleto.split("\\.").length - 1);
     }
@@ -75,7 +75,7 @@ public class ArvoreDNS {
         return removerRecursivo(proximo, partes, index - 1);
     }
 
-    // Exportar todos os caminhos completos (zonas)
+    // exportar todos os caminhos completos (zonas)
     public void exportarZonas() {
         exportarRecursivo(raiz, "");
     }

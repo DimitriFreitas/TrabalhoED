@@ -9,7 +9,7 @@
         @Override
         public void start(Stage stage) throws Exception {
             FXMLLoader fxmlLoader = new FXMLLoader(MainApp.class.getResource("/view/menu-inicial.fxml"));
-            Scene scene = new Scene(fxmlLoader.load(), 600, 400);
+            Scene scene = new Scene(fxmlLoader.load(), 280, 287);
             stage.setTitle("Agendamento de Consultas Médicas");
             stage.setScene(scene);
             stage.show();

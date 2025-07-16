@@ -4,7 +4,7 @@ import java.util.Scanner;
 public class Main {
     public static void main(String[] args) {
         ArvoreDNS dns = new ArvoreDNS();
-        Scanner scanner = new Scanner(System.in);
+        Scanner sc = new Scanner(System.in);
         int opcao;
 
         do {
@@ -16,23 +16,23 @@ public class Main {
             System.out.println("5 - Exportar zonas");
             System.out.println("0 - Sair");
             System.out.print("Opção: ");
-            opcao = scanner.nextInt();
-            scanner.nextLine();
+            opcao = sc.nextInt();
+            sc.nextLine();
 
             switch (opcao) {
                 case 1:
                     System.out.print("Digite o domínio (ex: app.example.com): ");
-                    String dominio = scanner.nextLine();
+                    String dominio = sc.nextLine();
                     System.out.print("TTL: ");
-                    int ttl = scanner.nextInt();
-                    scanner.nextLine();
+                    int ttl = sc.nextInt();
+                    sc.nextLine();
                     System.out.print("Tipo: ");
-                    String tipo = scanner.nextLine();
+                    String tipo = sc.nextLine();
                     dns.inserirDominio(dominio, ttl, tipo);
                     break;
                 case 2:
                     System.out.print("Digite o domínio a remover: ");
-                    String remover = scanner.nextLine();
+                    String remover = sc.nextLine();
                     if (dns.removerDominio(remover)) {
                         System.out.println("Removido com sucesso.");
                     } else {
@@ -41,7 +41,7 @@ public class Main {
                     break;
                 case 3:
                     System.out.print("Digite o domínio a buscar: ");
-                    String buscar = scanner.nextLine();
+                    String buscar = sc.nextLine();
                     if (!dns.buscarDominio(buscar)) {
                         System.out.println("Domínio não encontrado.");
                     }
@@ -62,6 +62,6 @@ public class Main {
             }
         } while (opcao != 0);
 
-        scanner.close();
+        sc.close();
     }
 }
