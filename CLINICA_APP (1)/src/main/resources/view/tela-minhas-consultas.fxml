@@ -10,10 +10,11 @@
 
 <AnchorPane prefHeight="400" prefWidth="600" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.clinica_app.ClinicaController">
    <children>
-      <Button layoutX="392.0" layoutY="305.0" text="Apagar Consulta Selecionada" onAction="#onRemoverConsultaMinhasConsultas" textAlignment="CENTER" />
-      <VBox layoutX="37.0" layoutY="59.0" spacing="10">
+      <Button layoutX="27.0" layoutY="312.0" onAction="#onCancelarConsultaMinhasConsultas" text="Cancelar Consulta Selecionada" />
+      <Button layoutX="403.0" layoutY="312.0" onAction="#onRemoverConsultaMinhasConsultas" text="Apagar Consulta Selecionada" textAlignment="CENTER" />
+      <VBox layoutX="27.0" layoutY="65.0" spacing="10">
          <Label style="-fx-font-size: 18px; -fx-font-weight: bold;" text="Minhas Consultas" />
-         <TableView fx:id="tabelaMinhasConsultas" prefHeight="200.0" prefWidth="526.0">
+         <TableView fx:id="tabelaMinhasConsultas" prefHeight="200.0" prefWidth="547.0">
             <columns>
                <TableColumn fx:id="colMinhasConsultaData" maxWidth="73.0" minWidth="73.0" prefWidth="73.0" text="Data" />
                <TableColumn fx:id="colMinhasConsultaHora" maxWidth="82.0" minWidth="80.0" prefWidth="82.0" text="Hora" />
@@ -31,6 +32,6 @@
          </VBox>
       </VBox>
       <Button layoutX="13.0" layoutY="13.0" onAction="#onVoltarTelaPaciente" text="Voltar" />
-      <Button layoutX="37.0" layoutY="305.0" text="Cancelar Consulta Selecionada" onAction="#onCancelarConsultaMinhasConsultas" />
+      <Button layoutX="209.0" layoutY="312.0" onAction="#onReagendarConsultaPaciente" text="Reagendar Consulta Selecionada" />
    </children>
 </AnchorPane>

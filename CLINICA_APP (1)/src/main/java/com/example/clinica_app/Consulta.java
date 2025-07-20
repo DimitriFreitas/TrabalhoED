@@ -20,6 +20,9 @@ public class Consulta {
         this.dataHoraFim = dataHoraFim;
         this.status = "AGENDADA";
     }
+
+    public static final String STATUS_SOLICITADO = "SOLICITADO";
+
     public Consulta(String idConsulta, Medico medico,
                     LocalDateTime dataHoraInicio, LocalDateTime dataHoraFim) {
         this.idConsulta = idConsulta;

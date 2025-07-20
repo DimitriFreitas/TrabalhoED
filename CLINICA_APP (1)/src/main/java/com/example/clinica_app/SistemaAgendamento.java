@@ -89,6 +89,12 @@ public class SistemaAgendamento {
         return false;
     }
 
+    public void solicitarReagendamento(Consulta consulta) {
+        String idMedico = consulta.getMedico().getIdMedico();
+        agendas.get(idMedico).put(consulta.getDataHoraInicio(), consulta);
+        consulta.getPaciente().adicionarConsultaAoHistorico(consulta);
+    }
+
     // Retorna todos os médicos
     public List<Medico> getTodosMedicos() {
         return new ArrayList<>(medicos.values());

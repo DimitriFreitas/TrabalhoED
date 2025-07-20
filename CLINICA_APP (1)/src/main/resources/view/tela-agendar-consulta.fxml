@@ -12,13 +12,13 @@
    <children>
       <VBox alignment="TOP_CENTER" layoutX="14.0" layoutY="39.0" spacing="10">
          <Label style="-fx-font-size: 18px; -fx-font-weight: bold;" text="Agendar Consulta" />
-         <HBox spacing="5" alignment="CENTER">
-            <ComboBox fx:id="comboEspecialidades" prefHeight="25.0" prefWidth="260.0" promptText="Selecione a Especialidade" />
+         <HBox alignment="CENTER" spacing="5">
+            <ComboBox fx:id="comboEspecialidades" prefHeight="25.0" prefWidth="230.0" promptText="Selecione a Especialidade" />
          </HBox>
          <Label text="Consultas Disponíveis" />
          <ListView fx:id="listaDisponibilidades" prefHeight="200.0" prefWidth="572.0" />
          <Button onAction="#onAgendarConsultaPaciente" text="Agendar Consulta Selecionada" />
       </VBox>
-      <Button onAction="#onVoltarTelaPaciente" layoutX="14.0" layoutY="14.0" text="Voltar" />
+      <Button layoutX="14.0" layoutY="14.0" onAction="#onVoltarTelaPaciente" text="Voltar" />
    </children>
 </AnchorPane>

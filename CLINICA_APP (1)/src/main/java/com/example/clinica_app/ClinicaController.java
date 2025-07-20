@@ -10,6 +10,7 @@ import javafx.stage.Stage;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.stage.Window;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -99,10 +100,6 @@ public class ClinicaController {
         } else {
             mostrarAlerta(Alert.AlertType.ERROR, "ID não encontrado.");
         }
-
-        // Fecha a janela atual
-        Stage stageAtual = (Stage) ((Node) event.getSource()).getScene().getWindow();
-        stageAtual.close();
     }
     @FXML
     private void onCadastrarPacienteButton() {
@@ -115,22 +112,16 @@ public class ClinicaController {
     @FXML
     private void irparaCadastro() {
         abrirTela("/view/menu-cadastro.fxml", "Cadastro de Paciente ou Médico");
-        Stage stageAtual = (Stage) campoNomeUsuario.getScene().getWindow();
-        stageAtual.close();
     }
 
     @FXML
     public void abrirTelaAgendarConsulta(ActionEvent event) {
         abrirTela("/view/tela-agendar-consulta.fxml", "Agendar Nova Consulta");
-        Stage stageAtual = (Stage) ((Node) event.getSource()).getScene().getWindow();
-        stageAtual.close();
     }
 
     @FXML
     public void abrirTelaMinhasConsultas(ActionEvent event) {
         abrirTela("/view/tela-minhas-consultas.fxml", "Minhas Consultas");
-        Stage stageAtual = (Stage) ((Node) event.getSource()).getScene().getWindow();
-        stageAtual.close();
     }
 
     // MÉTODO 2: Cadastrar Paciente
@@ -168,17 +159,6 @@ public class ClinicaController {
         campoIdadePaciente.clear();
         campoContatoPaciente.clear();
 
-        // Fecha a tela de cadastro de paciente
-        Stage stageCadastro = (Stage) campoIdPaciente.getScene().getWindow();
-        stageCadastro.close();
-
-        // Fecha o menu-cadastro, se estiver aberto
-        for (Stage stage : Stage.getWindows().stream().filter(w -> w instanceof Stage).map(w -> (Stage) w).toList()) {
-            if (stage.getTitle() != null && stage.getTitle().contains("Cadastro de Paciente ou Médico")) {
-                stage.close();
-            }
-        }
-
         // Abre a tela inicial
         abrirTela("/view/menu-inicial.fxml", "Menu Inicial");
     }
@@ -204,17 +184,6 @@ public class ClinicaController {
         campoNomeMedico.clear();
         campoEspecialidadeMedico.clear();
 
-        // Fecha a tela de cadastro de médico
-        Stage stageCadastro = (Stage) campoIdMedico.getScene().getWindow();
-        stageCadastro.close();
-
-        // Fecha o menu-cadastro, se estiver aberto
-        for (Stage stage : Stage.getWindows().stream().filter(w -> w instanceof Stage).map(w -> (Stage) w).toList()) {
-            if (stage.getTitle() != null && stage.getTitle().contains("Cadastro de Paciente ou Médico")) {
-                stage.close();
-            }
-        }
-
         // Abre a tela inicial
         abrirTela("/view/menu-inicial.fxml", "Menu Inicial");
     }
@@ -224,10 +193,14 @@ public class ClinicaController {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(caminhoFXML));
             Parent root = loader.load();
-            Stage stage = new Stage();
-            stage.setTitle(titulo);
-            stage.setScene(new Scene(root));
-            stage.show();
+            Stage stageAtual = (Stage) Stage.getWindows().stream()
+                    .filter(Window::isShowing)
+                    .findFirst()
+                    .orElse(null);
+            if (stageAtual != null) {
+                stageAtual.setTitle(titulo);
+                stageAtual.setScene(new Scene(root));
+            }
         } catch (Exception e) {
             e.printStackTrace();
             mostrarAlerta(Alert.AlertType.ERROR, "Erro ao abrir a tela: " + e.getMessage());
@@ -272,6 +245,7 @@ public class ClinicaController {
             tabelaMinhasConsultas.getItems().setAll(
                     sistema.getConsultasPaciente(AppContext.usuarioLogadoId).stream()
                             .filter(c -> "AGENDADA".equals(c.getStatus()) ||
+                                    "SOLICITADO".equals(c.getStatus()) ||
                                     ("CANCELADA".equals(c.getStatus()) && c.getMotivoCancelamento() != null && !c.getMotivoCancelamento().isEmpty()))
                             .collect(Collectors.toList())
             );
@@ -377,14 +351,23 @@ public class ClinicaController {
     //MÉTODO Auxiliar: Voltar para a tela inicial
     public void onVoltarTelaInicial(ActionEvent actionEvent) {
         abrirTela("/view/menu-inicial.fxml", "Menu Inicial");
-        Stage stageAtual = (Stage) ((Node) actionEvent.getSource()).getScene().getWindow();
-        stageAtual.close();
+    }
+    //MÉTODO Auxiliar: Voltar para a tela de Cadastro
+    @FXML
+    public void onVoltarTelaCadastro(ActionEvent event) {
+        abrirTela("/view/menu-cadastro.fxml", "Cadastro de Paciente ou Médico");
     }
     //MÉTODO Auxiliar: Voltar para a tela paciente
     public void onVoltarTelaPaciente(ActionEvent actionEvent) {
         abrirTela("/view/tela-paciente.fxml", "Tela Paciente");
-        Stage stageAtual = (Stage) ((Node) actionEvent.getSource()).getScene().getWindow();
-        stageAtual.close();
+    }
+    //MÉTODO Auxiliar: Voltar para a tela paciente
+    public void onVoltarTelaMinhasConsultas(ActionEvent actionEvent) {
+        abrirTela("/view/tela-minhas-consultas.fxml", "Minhas Consultas");
+    }
+    //MÉTODO Auxiliar: Voltar para a tela medico
+    public void onVoltarTelaMedico(ActionEvent actionEvent) {
+        abrirTela("/view/tela-medico.fxml", "Área do Médico");
     }
     //Método Auxiliar
     private void atualizarTabelaDisponibilidades(String idMedico) {
@@ -422,6 +405,18 @@ public class ClinicaController {
     }
 
     @FXML
+    public void onConfirmarConsulta(ActionEvent event) {
+        Consulta consultaSelecionada = tabelaConsultas.getSelectionModel().getSelectedItem();
+        if (consultaSelecionada == null || !"SOLICITADO".equals(consultaSelecionada.getStatus())) {
+            mostrarAlerta(Alert.AlertType.WARNING, "Selecione uma consulta solicitada para confirmar.");
+            return;
+        }
+        consultaSelecionada.setStatus("AGENDADA");
+        mostrarAlerta(Alert.AlertType.INFORMATION, "Consulta confirmada!");
+        atualizarTabelaConsultasMedico(AppContext.usuarioLogadoId);
+    }
+
+    @FXML
     public void onRemoverConsultaMinhasConsultas(ActionEvent event) {
         Consulta consultaSelecionada = tabelaMinhasConsultas.getSelectionModel().getSelectedItem();
         if (consultaSelecionada == null) {
@@ -432,11 +427,14 @@ public class ClinicaController {
             mostrarAlerta(Alert.AlertType.WARNING, "Só é possível remover consultas canceladas.");
             return;
         }
-        // Remove do histórico do paciente
+        // Remove do histórico do paciente (persistente)
         if (consultaSelecionada.getPaciente() != null) {
-            consultaSelecionada.getPaciente().getHistorico().remove(consultaSelecionada);
+            consultaSelecionada.getPaciente().removerConsultaDoHistorico(consultaSelecionada.getIdConsulta());
         }
-        tabelaMinhasConsultas.getItems().remove(consultaSelecionada);
+        // Atualiza a tabela para refletir a remoção
+        tabelaMinhasConsultas.getItems().setAll(
+                sistema.getConsultasPaciente(AppContext.usuarioLogadoId)
+        );
         mostrarAlerta(Alert.AlertType.INFORMATION, "Consulta removida com sucesso!");
     }
 
@@ -468,7 +466,46 @@ public class ClinicaController {
 
     // O método onAgendarConsultaPaciente não precisa mudar, pois a lógica dele já era pegar uma Consulta da lista.
     @FXML
-    public void onAgendarConsultaPaciente(ActionEvent actionEvent) {
+    public void onAgendarConsultaPaciente(ActionEvent event) {
+        // Verifica se está na tela de reagendamento
+        if (dataDisponibilidade != null && horaInicio != null && horaFim != null
+                && dataDisponibilidade.getValue() != null
+                && !horaInicio.getText().isEmpty()
+                && !horaFim.getText().isEmpty()) {
+
+            // Recupera a consulta cancelada selecionada anteriormente
+            List<Consulta> consultas = sistema.getConsultasPaciente(AppContext.usuarioLogadoId);
+            Consulta consultaCancelada = consultas.stream()
+                    .filter(c -> "CANCELADA".equals(c.getStatus()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (consultaCancelada == null) {
+                mostrarAlerta(Alert.AlertType.ERROR, "Nenhuma consulta cancelada para reagendar.");
+                return;
+            }
+
+            LocalDate data = dataDisponibilidade.getValue();
+            LocalTime inicio = LocalTime.parse(horaInicio.getText());
+            LocalTime fim = LocalTime.parse(horaFim.getText());
+            LocalDateTime inicioDT = LocalDateTime.of(data, inicio);
+            LocalDateTime fimDT = LocalDateTime.of(data, fim);
+
+            Consulta consultaSolicitada = new Consulta(
+                    java.util.UUID.randomUUID().toString(),
+                    consultaCancelada.getPaciente(),
+                    consultaCancelada.getMedico(),
+                    inicioDT,
+                    fimDT
+            );
+            consultaSolicitada.setStatus(Consulta.STATUS_SOLICITADO);
+
+            sistema.solicitarReagendamento(consultaSolicitada);
+
+            mostrarAlerta(Alert.AlertType.INFORMATION, "Reagendamento solicitado! Aguarde confirmação do médico.");
+            abrirTela("/view/tela-minhas-consultas.fxml", "Minhas Consultas");
+            return;
+        }
         Consulta consultaDisponivel = listaDisponibilidades.getSelectionModel().getSelectedItem();
         if (consultaDisponivel == null) {
             mostrarAlerta(Alert.AlertType.WARNING, "Selecione um horário disponível para agendar.");
@@ -488,6 +525,16 @@ public class ClinicaController {
         } catch (IllegalStateException e) {
             mostrarAlerta(Alert.AlertType.ERROR, "Erro ao agendar: " + e.getMessage());
         }
+    }
+
+    @FXML
+    public void onReagendarConsultaPaciente(ActionEvent actionEvent) {
+        abrirTela("/view/tela-reagendamento-paciente.fxml", "Reagendar Consulta");
+    }
+
+    @FXML
+    public void onReagendarConsultaMedico(ActionEvent actionEvent) {
+        abrirTela("/view/tela-reagendamento-medico.fxml", "Reagendar Consulta");
     }
 
     // O método onCancelarConsultaPaciente também não precisa mudar.
@@ -529,7 +576,7 @@ private void atualizarTabelaAgenda(String idMedico) {
         if (tabelaConsultas != null) {
             tabelaConsultas.getItems().setAll(
                     sistema.getConsultas(idMedico).stream()
-                            .filter(c -> "AGENDADA".equals(c.getStatus()))
+                            .filter(c -> "AGENDADA".equals(c.getStatus()) || "SOLICITADO".equals(c.getStatus()))
                             .collect(Collectors.toList())
             );
         }

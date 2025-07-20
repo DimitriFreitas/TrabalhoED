@@ -1,81 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
 
-<AnchorPane prefHeight="500.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.clinica_app.ClinicaController">
-    <children>
-        <VBox alignment="TOP_CENTER" spacing="10" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
-
-            <Label style="-fx-font-size: 20px; -fx-font-weight: bold;" text="Área do Médico" />
-            <Button onAction="#onVoltarTelaInicial" text="Voltar ao Menu Principal">
-            <VBox.margin>
-               <Insets left="-600.0" top="-20.0" />
-            </VBox.margin></Button>
-
-            <!-- Cadastro de disponibilidade -->
-            <Label text="Cadastrar Disponibilidade" />
-            <HBox spacing="10">
-                <DatePicker fx:id="dataDisponibilidade">
-               <HBox.margin>
-                  <Insets />
-               </HBox.margin></DatePicker>
-                <TextField fx:id="horaInicio" promptText="Hora início (ex: 14:00)" />
-                <TextField fx:id="horaFim" promptText="Hora fim (ex: 14:30)" />
-                <Button onAction="#onCadastrarDisponibilidade" text="Confirmar" />
-            <opaqueInsets>
-               <Insets left="30.0" />
-            </opaqueInsets>
-            <VBox.margin>
-               <Insets left="95.0" />
-            </VBox.margin>
-            </HBox>
-
-            <!-- Listas de agenda e consultas -->
-            <HBox spacing="20">
-                <VBox spacing="5">
-                    <Label text="Agenda Disponibilidade:" />
-                <TableView fx:id="tabelaAgenda" prefHeight="200.0" prefWidth="200.0">
-                    <columns>
-                        <TableColumn fx:id="colAgendaData" prefWidth="99.0" text="Data" />
-                        <TableColumn fx:id="colAgendaHora" prefWidth="98.0" text="Hora" />
-                    </columns>
-                </TableView>
-                    <Button onAction="#onCancelarDisponibilidade" prefWidth="200.0" text="Cancelar Disponibilidade" />
-                </VBox>
-
-                <VBox spacing="5">
-                    <Label text="Minhas Consultas:" />
-                <TableView fx:id="tabelaConsultas" prefHeight="200.0" prefWidth="526.0">
-                    <columns>
-                        <TableColumn fx:id="colConsultaData" maxWidth="73.0" minWidth="73.0" prefWidth="73.0" text="Data" />
-                        <TableColumn fx:id="colConsultaHora" maxWidth="82.0" minWidth="80.0" prefWidth="82.0" text="Hora" />
-                        <TableColumn fx:id="colConsultaPaciente" maxWidth="190.0" minWidth="188.0" prefWidth="188.0" text="Nome" />
-                        <TableColumn fx:id="colConsultaNumero" maxWidth="100.0" minWidth="100.0" prefWidth="100.0" text="Número" />
-                        <TableColumn fx:id="colConsultaStatus" maxWidth="80.0" minWidth="80.0" prefWidth="80.0" text="Status" />
-                    </columns>
-                  <VBox.margin>
-                     <Insets />
-                  </VBox.margin>
-               </TableView>
-
-                   <VBox spacing="5">
-                       <Label text="Motivo do Cancelamento" />
-                       <TextArea fx:id="motivoCancelamento" prefHeight="16.0" prefWidth="200.0" wrapText="true" />
-                   </VBox>
-                    <Button onAction="#onCancelarConsulta" text="Cancelar Consulta Selecionada">
-                  <VBox.margin>
-                     <Insets />
-                  </VBox.margin></Button>
+<AnchorPane prefHeight="500.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.clinica_app.ClinicaController">
+   <children>
+      <Label layoutX="326.0" layoutY="14.0" style="-fx-font-size: 20px; -fx-font-weight: bold;" text="Área do Médico" />
+      <Button layoutX="20.0" layoutY="28.0" onAction="#onVoltarTelaInicial" text="Voltar ao Menu Principal" />
+      <Label layoutX="116.0" layoutY="61.0" text="Cadastrar Disponibilidade:" />
+      <HBox layoutX="116.0" layoutY="83.0" spacing="10">
+         <opaqueInsets>
+            <Insets left="30.0" />
+         </opaqueInsets>
+         <children>
+            <DatePicker fx:id="dataDisponibilidade">
                <HBox.margin>
                   <Insets />
                </HBox.margin>
-                </VBox>
-            <VBox.margin>
-               <Insets left="20.0" />
-            </VBox.margin>
-            </HBox>
-        </VBox>
-    </children>
+            </DatePicker>
+            <TextField fx:id="horaInicio" promptText="Hora início (ex: 14:00)" />
+            <TextField fx:id="horaFim" promptText="Hora fim (ex: 14:30)" />
+            <Button onAction="#onCadastrarDisponibilidade" text="Confirmar" />
+         </children>
+      </HBox>
+      <Label layoutX="251.0" layoutY="129.0" text="Minhas Consultas:" />
+      <TableView fx:id="tabelaConsultas" layoutX="251.0" layoutY="150.0" prefHeight="200.0" prefWidth="526.0">
+         <columns>
+            <TableColumn fx:id="colConsultaData" maxWidth="73.0" minWidth="73.0" prefWidth="73.0" text="Data" />
+            <TableColumn fx:id="colConsultaHora" maxWidth="82.0" minWidth="80.0" prefWidth="82.0" text="Hora" />
+            <TableColumn fx:id="colConsultaPaciente" maxWidth="190.0" minWidth="188.0" prefWidth="188.0" text="Nome" />
+            <TableColumn fx:id="colConsultaNumero" maxWidth="100.0" minWidth="100.0" prefWidth="100.0" text="Número" />
+            <TableColumn fx:id="colConsultaStatus" maxWidth="82.0" minWidth="69.0" prefWidth="82.0" text="Status" />
+         </columns>
+      </TableView>
+      <Button layoutX="252.0" layoutY="357.0" onAction="#onConfirmarConsulta" prefHeight="25.0" prefWidth="190.0" text="Confimar Consulta Selecionada" />
+      <Button layoutX="252.0" layoutY="388.0" onAction="#onReagendarConsultaMedico" text="Reagendar Consulta Selecionada" />
+      <Button layoutX="596.0" layoutY="357.0" onAction="#onCancelarConsulta" prefHeight="25.0" prefWidth="181.0" text="Cancelar Consulta Selecionada" />
+      <TextArea fx:id="motivoCancelamento" layoutX="596.0" layoutY="388.0" prefHeight="37.0" prefWidth="181.0" promptText="Motivo do Cancelamento..." wrapText="true" />
+      <TableView fx:id="tabelaAgenda" layoutX="21.0" layoutY="150.0" prefHeight="200.0" prefWidth="200.0">
+         <columns>
+            <TableColumn fx:id="colAgendaData" prefWidth="99.0" text="Data" />
+            <TableColumn fx:id="colAgendaHora" prefWidth="100.0" text="Hora" />
+         </columns>
+      </TableView>
+      <Button layoutX="21.0" layoutY="357.0" onAction="#onCancelarDisponibilidade" prefWidth="200.0" text="Cancelar Disponibilidade" />
+      <Label layoutX="20.0" layoutY="129.0" text="Agenda Disponibilidade:" />
+   </children>
 </AnchorPane>
