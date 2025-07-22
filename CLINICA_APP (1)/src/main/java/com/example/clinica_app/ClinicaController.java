@@ -293,7 +293,9 @@ public class ClinicaController {
         if (tabelaDisponibilidades != null) {
             colInicio.setCellValueFactory(new PropertyValueFactory<>("dataHoraInicio"));
             colFim.setCellValueFactory(new PropertyValueFactory<>("dataHoraFim"));
-            colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
+            colStatus.setCellValueFactory(cellData ->
+                    new SimpleStringProperty(cellData.getValue().getStatus())
+            );
 
             // Formatação das datas
             colInicio.setCellFactory(column -> new TableCell<Consulta, LocalDateTime>() {
@@ -371,19 +373,9 @@ public class ClinicaController {
     }
     //Método Auxiliar
     private void atualizarTabelaDisponibilidades(String idMedico) {
-        colInicio.setCellValueFactory(new PropertyValueFactory<>("dataHoraInicio"));
-        colFim.setCellValueFactory(new PropertyValueFactory<>("dataHoraFim"));
-        colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
-
         tabelaDisponibilidades.getItems().setAll(
                 sistema.getConsultas(idMedico).stream()
                         .filter(c -> "DISPONIVEL".equals(c.getStatus()))
-                        .map(c -> new Consulta(
-                                c.getIdConsulta(),
-                                c.getMedico(),
-                                c.getDataHoraInicio(),
-                                c.getDataHoraFim()
-                        ))
                         .collect(Collectors.toList())
         );
     }
@@ -399,9 +391,13 @@ public class ClinicaController {
             mostrarAlerta(Alert.AlertType.WARNING, "Só é possível cancelar consultas agendadas.");
             return;
         }
-        sistema.cancelarConsultaPorPaciente(consultaSelecionada);
-        mostrarAlerta(Alert.AlertType.INFORMATION, "Consulta cancelada com sucesso!");
-        tabelaMinhasConsultas.getItems().setAll(sistema.getConsultasPaciente(AppContext.usuarioLogadoId));
+        if ("AGENDADA".equals(consultaSelecionada.getStatus())) {
+            sistema.cancelarConsultaPorPaciente(consultaSelecionada);
+            mostrarAlerta(Alert.AlertType.INFORMATION, "Consulta cancelada com sucesso!");
+            tabelaMinhasConsultas.getItems().setAll(sistema.getConsultasPaciente(AppContext.usuarioLogadoId));
+            return;
+        }
+        mostrarAlerta(Alert.AlertType.ERROR, "Erro");
     }
 
     @FXML
@@ -417,14 +413,26 @@ public class ClinicaController {
     }
 
     @FXML
+    public void onConcluirConsulta(ActionEvent event) {
+        Consulta consultaSelecionada = tabelaConsultas.getSelectionModel().getSelectedItem();
+        if (consultaSelecionada == null || !"AGENDADA".equals(consultaSelecionada.getStatus())) {
+            mostrarAlerta(Alert.AlertType.WARNING, "Selecione uma consulta agendada para confirmar.");
+            return;
+        }
+        consultaSelecionada.setStatus("CONCLUIDA");
+        mostrarAlerta(Alert.AlertType.INFORMATION, "Consulta finalizada!");
+        atualizarTabelaConsultasMedico(AppContext.usuarioLogadoId);
+    }
+
+    @FXML
     public void onRemoverConsultaMinhasConsultas(ActionEvent event) {
         Consulta consultaSelecionada = tabelaMinhasConsultas.getSelectionModel().getSelectedItem();
         if (consultaSelecionada == null) {
             mostrarAlerta(Alert.AlertType.WARNING, "Selecione uma consulta para remover.");
             return;
         }
-        if (!"CANCELADA".equals(consultaSelecionada.getStatus())) {
-            mostrarAlerta(Alert.AlertType.WARNING, "Só é possível remover consultas canceladas.");
+        if (!"CANCELADA".equals(consultaSelecionada.getStatus()) || !"CONCLUIDA".equals(consultaSelecionada.getStatus())) {
+            mostrarAlerta(Alert.AlertType.WARNING, "Só é possível remover consultas canceladas ou Concluidas.");
             return;
         }
         // Remove do histórico do paciente (persistente)
@@ -565,9 +573,7 @@ public class ClinicaController {
 private void atualizarTabelaAgenda(String idMedico) {
     if (tabelaAgenda != null) {
         tabelaAgenda.getItems().setAll(
-                sistema.getConsultas(idMedico).stream()
-                        .filter(c -> "DISPONIVEL".equals(c.getStatus()))
-                        .collect(Collectors.toList())
+                sistema.getConsultas(idMedico)
         );
     }
 }
@@ -575,9 +581,7 @@ private void atualizarTabelaAgenda(String idMedico) {
     private void atualizarTabelaConsultasMedico(String idMedico) {
         if (tabelaConsultas != null) {
             tabelaConsultas.getItems().setAll(
-                    sistema.getConsultas(idMedico).stream()
-                            .filter(c -> "AGENDADA".equals(c.getStatus()) || "SOLICITADO".equals(c.getStatus()))
-                            .collect(Collectors.toList())
+                    sistema.getConsultas(idMedico) // retorna List<Consulta>
             );
         }
     }
