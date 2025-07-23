@@ -26,6 +26,10 @@ public class Paciente {
         return nome;
     }
 
+    public String getIdade() {
+        return String.valueOf(idade);
+    }
+
     public List<Consulta> getHistorico() {
         return historicoConsultas;
     }

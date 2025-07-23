@@ -3,6 +3,7 @@
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
 <AnchorPane prefHeight="500.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.clinica_app.ClinicaController">
    <children>
@@ -36,8 +37,11 @@
       </TableView>
       <Button layoutX="251.0" layoutY="357.0" onAction="#onConfirmarConsulta" prefHeight="25.0" prefWidth="190.0" text="Confimar Consulta Selecionada" />
       <Button layoutX="251.0" layoutY="388.0" onAction="#onReagendarConsultaMedico" text="Reagendar Consulta Selecionada" />
-      <Button layoutX="596.0" layoutY="357.0" onAction="#onCancelarConsulta" prefHeight="25.0" prefWidth="181.0" text="Cancelar Consulta Selecionada" />
-      <TextArea fx:id="motivoCancelamento" layoutX="596.0" layoutY="388.0" prefHeight="37.0" prefWidth="181.0" promptText="Motivo do Cancelamento..." wrapText="true" />
+      <Button layoutX="251.0" layoutY="419.0" onAction="#onCancelarConsulta" prefHeight="25.0" prefWidth="190.0" text="Cancelar Consulta Selecionada" />
+      <TextArea fx:id="motivoCancelamento" layoutX="450.0" layoutY="357.0" prefHeight="118.0" prefWidth="327.0" promptText="Motivo..." wrapText="true">
+         <font>
+            <Font size="20.0" />
+         </font></TextArea>
       <TableView fx:id="tabelaAgenda" layoutX="21.0" layoutY="150.0" prefHeight="200.0" prefWidth="200.0">
          <columns>
             <TableColumn fx:id="colAgendaData" prefWidth="99.0" text="Data" />
@@ -46,6 +50,6 @@
       </TableView>
       <Button layoutX="21.0" layoutY="357.0" onAction="#onCancelarDisponibilidade" prefWidth="200.0" text="Cancelar Disponibilidade" />
       <Label layoutX="20.0" layoutY="129.0" text="Agenda Disponibilidade:" />
-      <Button layoutX="445.0" layoutY="357.0" onAction="#onConcluirConsulta" prefHeight="25.0" prefWidth="147.0" text="Concluir Consulta " />
+      <Button layoutX="251.0" layoutY="450.0" onAction="#onConcluirConsulta" prefHeight="25.0" prefWidth="190.0" text="Concluir Consulta " />
    </children>
 </AnchorPane>

@@ -18,6 +18,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 public class ClinicaController {
@@ -97,6 +98,8 @@ public class ClinicaController {
         } else if (sistema.isMedico(id)) {
             AppContext.usuarioLogadoId=id; // ← salva o ID do médico logado
             abrirTela("/view/tela-medico.fxml", "Área do Médico");
+            atualizarTabelaAgenda(id); // Atualiza a tabela de agenda do médico logado
+            atualizarListaAgenda(id);
         } else {
             mostrarAlerta(Alert.AlertType.ERROR, "ID não encontrado.");
         }
@@ -151,6 +154,7 @@ public class ClinicaController {
 
         Paciente paciente = new Paciente(id, nome, idade, contato);
         sistema.registrarPaciente(paciente);
+        ArquivoUtils.salvarPacientes(new ArrayList<>(sistema.getTodosPacientes()));
 
         mostrarAlerta(Alert.AlertType.INFORMATION, "Paciente cadastrado com sucesso!");
 
@@ -177,6 +181,7 @@ public class ClinicaController {
 
         Medico medico = new Medico(id, nome, especialidade);
         sistema.registrarMedico(medico);
+        ArquivoUtils.salvarMedicos(new ArrayList<>(sistema.getTodosMedicos()));
 
         mostrarAlerta(Alert.AlertType.INFORMATION, "Médico cadastrado com sucesso!");
 
@@ -244,9 +249,7 @@ public class ClinicaController {
             );
             tabelaMinhasConsultas.getItems().setAll(
                     sistema.getConsultasPaciente(AppContext.usuarioLogadoId).stream()
-                            .filter(c -> "AGENDADA".equals(c.getStatus()) ||
-                                    "SOLICITADO".equals(c.getStatus()) ||
-                                    ("CANCELADA".equals(c.getStatus()) && c.getMotivoCancelamento() != null && !c.getMotivoCancelamento().isEmpty()))
+                            .filter(c -> !"DISPONIVEL".equals(c.getStatus()))
                             .collect(Collectors.toList())
             );
         }
@@ -312,7 +315,6 @@ public class ClinicaController {
                     setText(empty || item == null ? "" : item.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
                 }
             });
-
             atualizarTabelaDisponibilidades(AppContext.usuarioLogadoId);
         }
 
@@ -394,6 +396,11 @@ public class ClinicaController {
         if ("AGENDADA".equals(consultaSelecionada.getStatus())) {
             sistema.cancelarConsultaPorPaciente(consultaSelecionada);
             mostrarAlerta(Alert.AlertType.INFORMATION, "Consulta cancelada com sucesso!");
+            ArquivoUtils.salvarConsultas(
+                    AppContext.sistema.getTodosMedicos().stream()
+                            .flatMap(medico -> AppContext.sistema.getConsultas(medico.getIdMedico()).stream())
+                            .collect(Collectors.toList())
+            );
             tabelaMinhasConsultas.getItems().setAll(sistema.getConsultasPaciente(AppContext.usuarioLogadoId));
             return;
         }
@@ -421,6 +428,11 @@ public class ClinicaController {
         }
         consultaSelecionada.setStatus("CONCLUIDA");
         mostrarAlerta(Alert.AlertType.INFORMATION, "Consulta finalizada!");
+        ArquivoUtils.salvarConsultas(
+                AppContext.sistema.getTodosMedicos().stream()
+                        .flatMap(medico -> AppContext.sistema.getConsultas(medico.getIdMedico()).stream())
+                        .collect(Collectors.toList())
+        );
         atualizarTabelaConsultasMedico(AppContext.usuarioLogadoId);
     }
 
@@ -431,15 +443,26 @@ public class ClinicaController {
             mostrarAlerta(Alert.AlertType.WARNING, "Selecione uma consulta para remover.");
             return;
         }
-        if (!"CANCELADA".equals(consultaSelecionada.getStatus()) || !"CONCLUIDA".equals(consultaSelecionada.getStatus())) {
-            mostrarAlerta(Alert.AlertType.WARNING, "Só é possível remover consultas canceladas ou Concluidas.");
+        if (!"CANCELADA".equals(consultaSelecionada.getStatus()) && !"CONCLUIDA".equals(consultaSelecionada.getStatus())) {
+            mostrarAlerta(Alert.AlertType.WARNING, "Só é possível remover consultas canceladas ou concluídas.");
             return;
         }
-        // Remove do histórico do paciente (persistente)
+        // Remove do histórico do paciente
         if (consultaSelecionada.getPaciente() != null) {
             consultaSelecionada.getPaciente().removerConsultaDoHistorico(consultaSelecionada.getIdConsulta());
         }
-        // Atualiza a tabela para refletir a remoção
+        // Remove da agenda do médico
+        sistema.getAgendaMedico(consultaSelecionada.getMedico().getIdMedico())
+                .remove(consultaSelecionada.getDataHoraInicio());
+
+        // Atualiza o arquivo
+        ArquivoUtils.salvarConsultas(
+                AppContext.sistema.getTodosMedicos().stream()
+                        .flatMap(medico -> AppContext.sistema.getConsultas(medico.getIdMedico()).stream())
+                        .collect(Collectors.toList())
+        );
+
+        // Atualiza a tabela
         tabelaMinhasConsultas.getItems().setAll(
                 sistema.getConsultasPaciente(AppContext.usuarioLogadoId)
         );
@@ -461,10 +484,19 @@ public class ClinicaController {
         }
 
         consultaSelecionada.setMotivoCancelamento(motivo);
-
-        sistema.cancelarConsultaPorMedico(AppContext.usuarioLogadoId, consultaSelecionada.getIdConsulta());
-        mostrarAlerta(Alert.AlertType.INFORMATION, "Consulta cancelada com sucesso!");
-
+        if ("AGENDADA".equals(consultaSelecionada.getStatus())) {
+            sistema.cancelarConsultaPorMedico(AppContext.usuarioLogadoId, consultaSelecionada.getIdConsulta());
+            mostrarAlerta(Alert.AlertType.INFORMATION, "Consulta cancelada com sucesso!");
+            atualizarTabelaConsultasMedico(AppContext.usuarioLogadoId);
+            motivoCancelamento.clear();
+            ArquivoUtils.salvarConsultas(
+                    AppContext.sistema.getTodosMedicos().stream()
+                            .flatMap(medico -> AppContext.sistema.getConsultas(medico.getIdMedico()).stream())
+                            .collect(Collectors.toList())
+            );
+            return;
+        }
+        mostrarAlerta(Alert.AlertType.ERROR, "Selecione uma consulta agendada para cancelar.");
         atualizarTabelaConsultasMedico(AppContext.usuarioLogadoId);
         motivoCancelamento.clear();
     }
@@ -476,22 +508,50 @@ public class ClinicaController {
     @FXML
     public void onAgendarConsultaPaciente(ActionEvent event) {
         // Verifica se está na tela de reagendamento
+        String id = AppContext.usuarioLogadoId;
         if (dataDisponibilidade != null && horaInicio != null && horaFim != null
                 && dataDisponibilidade.getValue() != null
                 && !horaInicio.getText().isEmpty()
                 && !horaFim.getText().isEmpty()) {
-
-            // Recupera a consulta cancelada selecionada anteriormente
             List<Consulta> consultas = sistema.getConsultasPaciente(AppContext.usuarioLogadoId);
             Consulta consultaCancelada = consultas.stream()
                     .filter(c -> "CANCELADA".equals(c.getStatus()))
                     .findFirst()
                     .orElse(null);
-
-            if (consultaCancelada == null) {
-                mostrarAlerta(Alert.AlertType.ERROR, "Nenhuma consulta cancelada para reagendar.");
-                return;
-            }
+            Consulta consultaAgendada = consultas.stream()
+                    .filter(c -> "AGENDADA".equals(c.getStatus()))
+                    .findFirst()
+                    .orElse(null);
+            // Verifica se o usuário é paciente ou médico
+            if (sistema.isPaciente(id)) {
+                Consulta consultaCancelada2 = consultas.stream()
+                        .filter(c -> "CANCELADA".equals(c.getStatus()))
+                        .findFirst()
+                        .orElse(null);
+                consultaCancelada = consultaCancelada2;
+                if (consultaCancelada == null) {
+                    mostrarAlerta(Alert.AlertType.ERROR, "Nenhuma consulta cancelada para reagendar.");
+                    return;
+                }
+                } else if (sistema.isMedico(id)) {
+                    Consulta consultaCancelada2 = consultas.stream()
+                            .filter(c -> "CANCELADA".equals(c.getStatus()))
+                            .findFirst()
+                            .orElse(null);
+                    consultaCancelada = consultaCancelada2;
+                    Consulta consultaAgendada2 = consultas.stream()
+                            .filter(c -> "AGENDADA".equals(c.getStatus()))
+                            .findFirst()
+                            .orElse(null);
+                    consultaAgendada = consultaAgendada2;
+                    if (consultaCancelada == null && consultaAgendada == null) {
+                        mostrarAlerta(Alert.AlertType.ERROR, "Porra consulta para reagendar.");
+                        return;
+                    }
+                } else {
+                    mostrarAlerta(Alert.AlertType.ERROR, "Faça login como paciente ou médico.");
+                    return;
+                }
 
             LocalDate data = dataDisponibilidade.getValue();
             LocalTime inicio = LocalTime.parse(horaInicio.getText());
@@ -499,20 +559,52 @@ public class ClinicaController {
             LocalDateTime inicioDT = LocalDateTime.of(data, inicio);
             LocalDateTime fimDT = LocalDateTime.of(data, fim);
 
-            Consulta consultaSolicitada = new Consulta(
-                    java.util.UUID.randomUUID().toString(),
-                    consultaCancelada.getPaciente(),
-                    consultaCancelada.getMedico(),
-                    inicioDT,
-                    fimDT
-            );
-            consultaSolicitada.setStatus(Consulta.STATUS_SOLICITADO);
+            if (inicioDT.isAfter(fimDT) || inicioDT.isEqual(fimDT)) {
+                mostrarAlerta(Alert.AlertType.ERROR, "Horário de início deve ser antes do horário de fim.");
+                return;
+            }
+            if (sistema.isPaciente(id)) {
+                Consulta consultaSolicitada = new Consulta(
+                        java.util.UUID.randomUUID().toString(),
+                        consultaCancelada.getPaciente(),
+                        consultaCancelada.getMedico(),
+                        inicioDT,
+                        fimDT
+                );
+                consultaSolicitada.setStatus(Consulta.STATUS_SOLICITADO);
 
-            sistema.solicitarReagendamento(consultaSolicitada);
+                sistema.solicitarReagendamento(consultaSolicitada);
 
-            mostrarAlerta(Alert.AlertType.INFORMATION, "Reagendamento solicitado! Aguarde confirmação do médico.");
-            abrirTela("/view/tela-minhas-consultas.fxml", "Minhas Consultas");
-            return;
+                mostrarAlerta(Alert.AlertType.INFORMATION, "Reagendamento solicitado! Aguarde confirmação do médico.");
+                ArquivoUtils.salvarConsultas(
+                        AppContext.sistema.getTodosMedicos().stream()
+                                .flatMap(medico -> AppContext.sistema.getConsultas(medico.getIdMedico()).stream())
+                                .collect(Collectors.toList())
+                );
+                abrirTela("/view/tela-minhas-consultas.fxml", "Minhas Consultas");
+                return;
+            } else if (sistema.isMedico(id)) {
+                Consulta consultaReagendada = new Consulta(
+                        java.util.UUID.randomUUID().toString(),
+                        consultaCancelada.getPaciente(),
+                        consultaCancelada.getMedico(),
+                        inicioDT,
+                        fimDT
+                );
+                consultaReagendada.setStatus(Consulta.STATUS_REAGENDADA);
+
+                sistema.solicitarReagendamento(consultaReagendada);
+
+                mostrarAlerta(Alert.AlertType.INFORMATION, "Reagendamento feito!");
+                ArquivoUtils.salvarConsultas(
+                        AppContext.sistema.getTodosMedicos().stream()
+                                .flatMap(medico -> AppContext.sistema.getConsultas(medico.getIdMedico()).stream())
+                                .collect(Collectors.toList())
+                );
+                abrirTela("/view/tela-minhas-consultas.fxml", "Minhas Consultas");
+                return;
+            }
+
         }
         Consulta consultaDisponivel = listaDisponibilidades.getSelectionModel().getSelectedItem();
         if (consultaDisponivel == null) {
@@ -528,21 +620,59 @@ public class ClinicaController {
                     consultaDisponivel.getDataHoraFim()
             );
             mostrarAlerta(Alert.AlertType.INFORMATION, "Consulta agendada com sucesso!");
-            // Atualiza a lista de disponibilidades para a especialidade que estava selecionada
+            atualizarTabelaConsultasMedico(AppContext.usuarioLogadoId);
             atualizarListaDisponibilidadesPorEspecialidade(comboEspecialidades.getValue());
         } catch (IllegalStateException e) {
             mostrarAlerta(Alert.AlertType.ERROR, "Erro ao agendar: " + e.getMessage());
         }
+        ArquivoUtils.salvarConsultas(
+                AppContext.sistema.getTodosMedicos().stream()
+                        .flatMap(medico -> AppContext.sistema.getConsultas(medico.getIdMedico()).stream())
+                        .collect(Collectors.toList())
+        );
     }
 
     @FXML
     public void onReagendarConsultaPaciente(ActionEvent actionEvent) {
-        abrirTela("/view/tela-reagendamento-paciente.fxml", "Reagendar Consulta");
+        Consulta consultaSelecionada = tabelaConsultas.getSelectionModel().getSelectedItem();
+
+        if (consultaSelecionada == null) {
+            mostrarAlerta(Alert.AlertType.WARNING, "Selecione uma consulta para reagendar.");
+            return;
+        }
+
+        if ("AGENDADA".equals(consultaSelecionada.getStatus())) {
+            abrirTela("/view/tela-reagendamento-paciente.fxml", "Reagendar Consulta");
+            return;
+        }
+
+        mostrarAlerta(Alert.AlertType.ERROR, "Selecione uma consulta agendada, ou que foi cancelada para reagendar.");
+        atualizarTabelaConsultasMedico(AppContext.usuarioLogadoId);
+        motivoCancelamento.clear();
     }
 
     @FXML
     public void onReagendarConsultaMedico(ActionEvent actionEvent) {
-        abrirTela("/view/tela-reagendamento-medico.fxml", "Reagendar Consulta");
+        Consulta consultaSelecionada = tabelaConsultas.getSelectionModel().getSelectedItem();
+        String motivo = motivoCancelamento.getText().trim();
+        if (consultaSelecionada == null) {
+            mostrarAlerta(Alert.AlertType.WARNING, "Selecione uma consulta para reagendar.");
+            return;
+        }
+        if (motivo.isEmpty()) {
+            mostrarAlerta(Alert.AlertType.WARNING, "Informe o motivo do reagendamento.");
+            return;
+        }
+
+        consultaSelecionada.setMotivoCancelamento(motivo);
+        if ("AGENDADA".equals(consultaSelecionada.getStatus())) {
+            abrirTela("/view/tela-reagendamento-medico.fxml", "Reagendar Consulta");
+            return;
+        }
+
+        mostrarAlerta(Alert.AlertType.ERROR, "Selecione uma consulta agendada para reagendar.");
+        atualizarTabelaConsultasMedico(AppContext.usuarioLogadoId);
+        motivoCancelamento.clear();
     }
 
     // O método onCancelarConsultaPaciente também não precisa mudar.
@@ -573,7 +703,9 @@ public class ClinicaController {
 private void atualizarTabelaAgenda(String idMedico) {
     if (tabelaAgenda != null) {
         tabelaAgenda.getItems().setAll(
-                sistema.getConsultas(idMedico)
+                sistema.getConsultas(idMedico).stream()
+                        .filter(c -> "DISPONIVEL".equals(c.getStatus()))
+                        .collect(Collectors.toList())
         );
     }
 }
@@ -581,7 +713,9 @@ private void atualizarTabelaAgenda(String idMedico) {
     private void atualizarTabelaConsultasMedico(String idMedico) {
         if (tabelaConsultas != null) {
             tabelaConsultas.getItems().setAll(
-                    sistema.getConsultas(idMedico) // retorna List<Consulta>
+                    sistema.getConsultas(idMedico).stream()
+                            .filter(c -> !"DISPONIVEL".equals(c.getStatus()))
+                            .collect(Collectors.toList())
             );
         }
     }
@@ -599,43 +733,37 @@ private void atualizarListaDisponibilidadesPorEspecialidade(String especialidade
     listaDisponibilidades.getItems().setAll(disponibilidadesFiltradas);
 }
 
-/** Atualiza a lista de consultas que o paciente logado já agendou. (Sem alteração) */
-private void atualizarListaMinhasConsultas() {
-    if (AppContext.usuarioLogadoId != null) {
-        listaMinhasConsultas.getItems().setAll(sistema.getConsultasPaciente(AppContext.usuarioLogadoId));
+    /** Atualiza a lista de consultas que o paciente logado já agendou. (Sem alteração) */
+    private void atualizarListaMinhasConsultas() {
+        if (AppContext.usuarioLogadoId != null) {
+            listaMinhasConsultas.getItems().setAll(sistema.getConsultasPaciente(AppContext.usuarioLogadoId));
+        }
     }
-}
 
-public void onVerConsultasPaciente(ActionEvent actionEvent) {
-}
+    public void onVerConsultasPaciente(ActionEvent actionEvent) {
+    }
 
-    public void onCancelarDisponibilidade(ActionEvent actionEvent) {
-        if (tabelaAgenda != null && tabelaAgenda.getSelectionModel().getSelectedItem() != null) {
-            Consulta disponibilidade = tabelaAgenda.getSelectionModel().getSelectedItem();
-            boolean removido = sistema.cancelarConsultaPorMedico(
-                    AppContext.usuarioLogadoId,
-                    disponibilidade.getIdConsulta()
-            );
-            if (removido) {
-                mostrarAlerta(Alert.AlertType.INFORMATION, "Disponibilidade cancelada com sucesso!");
-                atualizarTabelaAgenda(AppContext.usuarioLogadoId);
-            } else {
-                mostrarAlerta(Alert.AlertType.ERROR, "Não foi possível cancelar a disponibilidade.");
-            }
-        } else if (tabelaDisponibilidades != null && tabelaDisponibilidades.getSelectionModel().getSelectedItem() != null) {
-            Consulta disponibilidade = tabelaDisponibilidades.getSelectionModel().getSelectedItem();
-            boolean removido = sistema.cancelarConsultaPorMedico(
-                    AppContext.usuarioLogadoId,
-                    disponibilidade.getIdConsulta()
-            );
-            if (removido) {
-                mostrarAlerta(Alert.AlertType.INFORMATION, "Disponibilidade cancelada com sucesso!");
-                atualizarTabelaDisponibilidades(AppContext.usuarioLogadoId);
-            } else {
-                mostrarAlerta(Alert.AlertType.ERROR, "Não foi possível cancelar a disponibilidade.");
-            }
-        } else {
+    @FXML
+    public void onCancelarDisponibilidade(ActionEvent event) {
+        Consulta disponibilidadeSelecionada = tabelaAgenda.getSelectionModel().getSelectedItem();
+        if (disponibilidadeSelecionada == null || !"DISPONIVEL".equals(disponibilidadeSelecionada.getStatus())) {
             mostrarAlerta(Alert.AlertType.WARNING, "Selecione uma disponibilidade para cancelar.");
+            return;
+        }
+        boolean removido = sistema.cancelarConsultaPorMedico(
+                AppContext.usuarioLogadoId,
+                disponibilidadeSelecionada.getIdConsulta()
+        );
+        if (removido) {
+            ArquivoUtils.salvarConsultas(
+                    AppContext.sistema.getTodosMedicos().stream()
+                            .flatMap(medico -> AppContext.sistema.getConsultas(medico.getIdMedico()).stream())
+                            .collect(Collectors.toList())
+            );
+            atualizarTabelaAgenda(AppContext.usuarioLogadoId);
+            mostrarAlerta(Alert.AlertType.INFORMATION, "Disponibilidade cancelada");
+        } else {
+            mostrarAlerta(Alert.AlertType.ERROR, "Erro ao cancelar disponibilidade.");
         }
     }
 
@@ -689,6 +817,11 @@ public void onVerConsultasPaciente(ActionEvent actionEvent) {
         } catch (Exception e) {
             mostrarAlerta(Alert.AlertType.ERROR, "Erro ao cadastrar: " + e.getMessage());
         }
+        ArquivoUtils.salvarConsultas(
+                AppContext.sistema.getTodosMedicos().stream()
+                        .flatMap(medico -> AppContext.sistema.getConsultas(medico.getIdMedico()).stream())
+                        .collect(Collectors.toList())
+        );
     }
 
     // Adicione este método auxiliar ao seu controller:
