@@ -79,6 +79,7 @@ public class ClinicaController {
 
     // Sistema compartilhado
     private final SistemaAgendamento sistema = AppContext.sistema;
+    private Consulta consultaParaReagendar;
     //test
 
 
@@ -284,6 +285,9 @@ public class ClinicaController {
                                     : ""
                     )
             );
+            colConsultaStatus.setCellValueFactory(cellData ->
+                    new SimpleStringProperty(cellData.getValue().getStatus())
+            );
             atualizarTabelaConsultasMedico(AppContext.usuarioLogadoId);
         }
 
@@ -370,8 +374,11 @@ public class ClinicaController {
         abrirTela("/view/tela-minhas-consultas.fxml", "Minhas Consultas");
     }
     //MÉTODO Auxiliar: Voltar para a tela medico
-    public void onVoltarTelaMedico(ActionEvent actionEvent) {
-        abrirTela("/view/tela-medico.fxml", "Área do Médico");
+    @FXML
+    public void onVoltarTelaMedico(ActionEvent event) {
+        // Fecha apenas a janela atual (pop-up)
+        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        stage.close();
     }
     //Método Auxiliar
     private void atualizarTabelaDisponibilidades(String idMedico) {
@@ -389,10 +396,6 @@ public class ClinicaController {
             mostrarAlerta(Alert.AlertType.WARNING, "Selecione uma consulta para cancelar.");
             return;
         }
-        if (!"AGENDADA".equals(consultaSelecionada.getStatus())) {
-            mostrarAlerta(Alert.AlertType.WARNING, "Só é possível cancelar consultas agendadas.");
-            return;
-        }
         if ("AGENDADA".equals(consultaSelecionada.getStatus())) {
             sistema.cancelarConsultaPorPaciente(consultaSelecionada);
             mostrarAlerta(Alert.AlertType.INFORMATION, "Consulta cancelada com sucesso!");
@@ -403,8 +406,10 @@ public class ClinicaController {
             );
             tabelaMinhasConsultas.getItems().setAll(sistema.getConsultasPaciente(AppContext.usuarioLogadoId));
             return;
+        } else {
+            mostrarAlerta(Alert.AlertType.WARNING, "Só é possível cancelar consultas agendadas.");
+            return;
         }
-        mostrarAlerta(Alert.AlertType.ERROR, "Erro");
     }
 
     @FXML
@@ -484,7 +489,7 @@ public class ClinicaController {
         }
 
         consultaSelecionada.setMotivoCancelamento(motivo);
-        if ("AGENDADA".equals(consultaSelecionada.getStatus())) {
+        if ("AGENDADA".equals(consultaSelecionada.getStatus()) || "REAGENDADA".equals(consultaSelecionada.getStatus())) {
             sistema.cancelarConsultaPorMedico(AppContext.usuarioLogadoId, consultaSelecionada.getIdConsulta());
             mostrarAlerta(Alert.AlertType.INFORMATION, "Consulta cancelada com sucesso!");
             atualizarTabelaConsultasMedico(AppContext.usuarioLogadoId);
@@ -504,54 +509,90 @@ public class ClinicaController {
     public void onVerAgenda(ActionEvent actionEvent) {
     }
 
-    // O método onAgendarConsultaPaciente não precisa mudar, pois a lógica dele já era pegar uma Consulta da lista.
     @FXML
+    public void onAgendarConsultaMedico(ActionEvent event) {
+        Consulta consultaSelecionada = (tabelaConsultas != null)
+                ? tabelaConsultas.getSelectionModel().getSelectedItem()
+                : null;
+
+        // Usa consultaParaReagendar se não houver seleção na tabela
+        if (consultaSelecionada == null) {
+            consultaSelecionada = consultaParaReagendar;
+        }
+
+        if (consultaSelecionada == null ||
+                !( "AGENDADA".equals(consultaSelecionada.getStatus()) || "REAGENDADA".equals(consultaSelecionada.getStatus()) )) {
+            mostrarAlerta(Alert.AlertType.WARNING, "Selecione uma consulta agendada para reagendar.");
+            return;
+        }
+
+        // Pega os novos horários
+        if (dataDisponibilidade == null || horaInicio == null || horaFim == null ||
+                dataDisponibilidade.getValue() == null ||
+                horaInicio.getText().isEmpty() || horaFim.getText().isEmpty()) {
+            mostrarAlerta(Alert.AlertType.WARNING, "Preencha data e horários para reagendar.");
+            return;
+        }
+
+        LocalDate data = dataDisponibilidade.getValue();
+        LocalTime inicio;
+        LocalTime fim;
+        try {
+            inicio = LocalTime.parse(horaInicio.getText());
+            fim = LocalTime.parse(horaFim.getText());
+        } catch (Exception e) {
+            mostrarAlerta(Alert.AlertType.ERROR, "Formato de horário inválido.");
+            return;
+        }
+        LocalDateTime inicioDT = LocalDateTime.of(data, inicio);
+        LocalDateTime fimDT = LocalDateTime.of(data, fim);
+
+        if (inicioDT.isAfter(fimDT) || inicioDT.isEqual(fimDT)) {
+            mostrarAlerta(Alert.AlertType.ERROR, "Horário de início deve ser antes do horário de fim.");
+            return;
+        }
+
+        // Cria nova consulta reagendada
+        Consulta consultaReagendada = new Consulta(
+                java.util.UUID.randomUUID().toString(),
+                consultaSelecionada.getPaciente(),
+                consultaSelecionada.getMedico(),
+                inicioDT,
+                fimDT
+        );
+        consultaReagendada.setStatus(Consulta.STATUS_REAGENDADA);
+
+        sistema.solicitarReagendamento(consultaReagendada);
+
+        mostrarAlerta(Alert.AlertType.INFORMATION, "Reagendamento feito!");
+        ArquivoUtils.salvarConsultas(
+                AppContext.sistema.getTodosMedicos().stream()
+                        .flatMap(medico -> AppContext.sistema.getConsultas(medico.getIdMedico()).stream())
+                        .collect(Collectors.toList())
+        );
+        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        stage.close();
+    }
+
+    // O método onAgendarConsultaPaciente não precisa mudar, pois a lógica dele já era pegar uma Consulta da lista.
     public void onAgendarConsultaPaciente(ActionEvent event) {
         // Verifica se está na tela de reagendamento
-        String id = AppContext.usuarioLogadoId;
         if (dataDisponibilidade != null && horaInicio != null && horaFim != null
                 && dataDisponibilidade.getValue() != null
                 && !horaInicio.getText().isEmpty()
                 && !horaFim.getText().isEmpty()) {
+
+            // Recupera a consulta cancelada selecionada anteriormente
             List<Consulta> consultas = sistema.getConsultasPaciente(AppContext.usuarioLogadoId);
             Consulta consultaCancelada = consultas.stream()
                     .filter(c -> "CANCELADA".equals(c.getStatus()))
                     .findFirst()
                     .orElse(null);
-            Consulta consultaAgendada = consultas.stream()
-                    .filter(c -> "AGENDADA".equals(c.getStatus()))
-                    .findFirst()
-                    .orElse(null);
-            // Verifica se o usuário é paciente ou médico
-            if (sistema.isPaciente(id)) {
-                Consulta consultaCancelada2 = consultas.stream()
-                        .filter(c -> "CANCELADA".equals(c.getStatus()))
-                        .findFirst()
-                        .orElse(null);
-                consultaCancelada = consultaCancelada2;
-                if (consultaCancelada == null) {
-                    mostrarAlerta(Alert.AlertType.ERROR, "Nenhuma consulta cancelada para reagendar.");
-                    return;
-                }
-                } else if (sistema.isMedico(id)) {
-                    Consulta consultaCancelada2 = consultas.stream()
-                            .filter(c -> "CANCELADA".equals(c.getStatus()))
-                            .findFirst()
-                            .orElse(null);
-                    consultaCancelada = consultaCancelada2;
-                    Consulta consultaAgendada2 = consultas.stream()
-                            .filter(c -> "AGENDADA".equals(c.getStatus()))
-                            .findFirst()
-                            .orElse(null);
-                    consultaAgendada = consultaAgendada2;
-                    if (consultaCancelada == null && consultaAgendada == null) {
-                        mostrarAlerta(Alert.AlertType.ERROR, "Porra consulta para reagendar.");
-                        return;
-                    }
-                } else {
-                    mostrarAlerta(Alert.AlertType.ERROR, "Faça login como paciente ou médico.");
-                    return;
-                }
+
+            if (consultaCancelada == null) {
+                mostrarAlerta(Alert.AlertType.ERROR, "Nenhuma consulta cancelada para reagendar.");
+                return;
+            }
 
             LocalDate data = dataDisponibilidade.getValue();
             LocalTime inicio = LocalTime.parse(horaInicio.getText());
@@ -559,53 +600,22 @@ public class ClinicaController {
             LocalDateTime inicioDT = LocalDateTime.of(data, inicio);
             LocalDateTime fimDT = LocalDateTime.of(data, fim);
 
-            if (inicioDT.isAfter(fimDT) || inicioDT.isEqual(fimDT)) {
-                mostrarAlerta(Alert.AlertType.ERROR, "Horário de início deve ser antes do horário de fim.");
-                return;
-            }
-            if (sistema.isPaciente(id)) {
-                Consulta consultaSolicitada = new Consulta(
-                        java.util.UUID.randomUUID().toString(),
-                        consultaCancelada.getPaciente(),
-                        consultaCancelada.getMedico(),
-                        inicioDT,
-                        fimDT
-                );
-                consultaSolicitada.setStatus(Consulta.STATUS_SOLICITADO);
+            Consulta consultaSolicitada = new Consulta(
+                    java.util.UUID.randomUUID().toString(),
+                    consultaCancelada.getPaciente(),
+                    consultaCancelada.getMedico(),
+                    inicioDT,
+                    fimDT
+            );
+            consultaSolicitada.setStatus(Consulta.STATUS_SOLICITADO);
 
-                sistema.solicitarReagendamento(consultaSolicitada);
+            sistema.solicitarReagendamento(consultaSolicitada);
 
-                mostrarAlerta(Alert.AlertType.INFORMATION, "Reagendamento solicitado! Aguarde confirmação do médico.");
-                ArquivoUtils.salvarConsultas(
-                        AppContext.sistema.getTodosMedicos().stream()
-                                .flatMap(medico -> AppContext.sistema.getConsultas(medico.getIdMedico()).stream())
-                                .collect(Collectors.toList())
-                );
-                abrirTela("/view/tela-minhas-consultas.fxml", "Minhas Consultas");
-                return;
-            } else if (sistema.isMedico(id)) {
-                Consulta consultaReagendada = new Consulta(
-                        java.util.UUID.randomUUID().toString(),
-                        consultaCancelada.getPaciente(),
-                        consultaCancelada.getMedico(),
-                        inicioDT,
-                        fimDT
-                );
-                consultaReagendada.setStatus(Consulta.STATUS_REAGENDADA);
-
-                sistema.solicitarReagendamento(consultaReagendada);
-
-                mostrarAlerta(Alert.AlertType.INFORMATION, "Reagendamento feito!");
-                ArquivoUtils.salvarConsultas(
-                        AppContext.sistema.getTodosMedicos().stream()
-                                .flatMap(medico -> AppContext.sistema.getConsultas(medico.getIdMedico()).stream())
-                                .collect(Collectors.toList())
-                );
-                abrirTela("/view/tela-minhas-consultas.fxml", "Minhas Consultas");
-                return;
-            }
-
+            mostrarAlerta(Alert.AlertType.INFORMATION, "Reagendamento solicitado! Aguarde confirmação do médico.");
+            abrirTela("/view/tela-minhas-consultas.fxml", "Minhas Consultas");
+            return;
         }
+
         Consulta consultaDisponivel = listaDisponibilidades.getSelectionModel().getSelectedItem();
         if (consultaDisponivel == null) {
             mostrarAlerta(Alert.AlertType.WARNING, "Selecione um horário disponível para agendar.");
@@ -634,14 +644,19 @@ public class ClinicaController {
 
     @FXML
     public void onReagendarConsultaPaciente(ActionEvent actionEvent) {
-        Consulta consultaSelecionada = tabelaConsultas.getSelectionModel().getSelectedItem();
+        Consulta consultaSelecionada = null;
+        if (tabelaConsultas != null) {
+            consultaSelecionada = tabelaConsultas.getSelectionModel().getSelectedItem();
+        } else if (tabelaMinhasConsultas != null) {
+            consultaSelecionada = tabelaMinhasConsultas.getSelectionModel().getSelectedItem();
+        }
 
         if (consultaSelecionada == null) {
             mostrarAlerta(Alert.AlertType.WARNING, "Selecione uma consulta para reagendar.");
             return;
         }
 
-        if ("AGENDADA".equals(consultaSelecionada.getStatus())) {
+        if ("AGENDADA".equals(consultaSelecionada.getStatus()) || "CANCELADA".equals(consultaSelecionada.getStatus())) {
             abrirTela("/view/tela-reagendamento-paciente.fxml", "Reagendar Consulta");
             return;
         }
@@ -663,16 +678,23 @@ public class ClinicaController {
             mostrarAlerta(Alert.AlertType.WARNING, "Informe o motivo do reagendamento.");
             return;
         }
-
         consultaSelecionada.setMotivoCancelamento(motivo);
-        if ("AGENDADA".equals(consultaSelecionada.getStatus())) {
-            abrirTela("/view/tela-reagendamento-medico.fxml", "Reagendar Consulta");
-            return;
-        }
 
-        mostrarAlerta(Alert.AlertType.ERROR, "Selecione uma consulta agendada para reagendar.");
-        atualizarTabelaConsultasMedico(AppContext.usuarioLogadoId);
-        motivoCancelamento.clear();
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/tela-reagendamento-medico.fxml"));
+            Parent root = loader.load();
+            ClinicaController controller = loader.getController();
+            controller.consultaParaReagendar = consultaSelecionada;
+
+            Stage popup = new Stage();
+            popup.setTitle("Reagendar Consulta");
+            popup.setScene(new Scene(root));
+            popup.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            popup.showAndWait(); // Espera o pop-up ser fechado
+        } catch (Exception e) {
+            e.printStackTrace();
+            mostrarAlerta(Alert.AlertType.ERROR, "Erro ao abrir a tela: " + e.getMessage());
+        }
     }
 
     // O método onCancelarConsultaPaciente também não precisa mudar.
