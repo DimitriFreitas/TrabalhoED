@@ -552,6 +552,13 @@ public class ClinicaController {
             return;
         }
 
+        // Remove a consulta antiga da agenda do médico e do histórico do paciente
+        sistema.getAgendaMedico(consultaSelecionada.getMedico().getIdMedico())
+                .remove(consultaSelecionada.getDataHoraInicio());
+        if (consultaSelecionada.getPaciente() != null) {
+            consultaSelecionada.getPaciente().removerConsultaDoHistorico(consultaSelecionada.getIdConsulta());
+        }
+
         // Cria nova consulta reagendada
         Consulta consultaReagendada = new Consulta(
                 java.util.UUID.randomUUID().toString(),
@@ -570,8 +577,11 @@ public class ClinicaController {
                         .flatMap(medico -> AppContext.sistema.getConsultas(medico.getIdMedico()).stream())
                         .collect(Collectors.toList())
         );
+
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         stage.close();
+
+        atualizarTabelaConsultasMedico(AppContext.usuarioLogadoId);
     }
 
     // O método onAgendarConsultaPaciente não precisa mudar, pois a lógica dele já era pegar uma Consulta da lista.

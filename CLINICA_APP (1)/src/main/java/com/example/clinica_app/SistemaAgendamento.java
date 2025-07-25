@@ -80,8 +80,9 @@ public class SistemaAgendamento {
 
                 if (consulta.getPaciente() != null) {
                     if (!"AGENDADA".equals(consulta.getStatus()) &&
-                            !"SOLICITADO".equals(consulta.getStatus())) {
-                        // Só permite cancelar se estiver AGENDADA ou SOLICITADO
+                            !"SOLICITADO".equals(consulta.getStatus()) &&
+                            !"REAGENDADA".equals(consulta.getStatus())) {
+                        // Só permite cancelar se estiver AGENDADA, SOLICITADO ou REAGENDADA
                         return false;
                     }
                     consulta.setStatus("CANCELADA");
