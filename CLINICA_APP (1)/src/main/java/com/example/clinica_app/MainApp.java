@@ -1,4 +1,4 @@
-    package com.example.clinica_app;
+    package ;
 
     import javafx.application.Application;
     import javafx.fxml.FXMLLoader;
