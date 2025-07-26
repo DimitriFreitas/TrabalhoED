@@ -60,6 +60,9 @@ public class SistemaAgendamento {
         if (consulta == null || consulta.getMedico() == null) {
             throw new IllegalArgumentException("Consulta ou médico inválido.");
         }
+        if (!"AGENDADA".equals(consulta.getStatus())) {
+            throw new IllegalStateException("Só é possível cancelar consultas agendadas.");
+        }
         consulta.setStatus("DISPONIVEL");
         if (consulta.getPaciente() != null) {
             consulta.getPaciente().removerConsultaDoHistorico(consulta.getIdConsulta());
@@ -76,12 +79,16 @@ public class SistemaAgendamento {
                     consulta.getMedico().getIdMedico().equals(idMedico)) {
 
                 if (consulta.getPaciente() != null) {
+                    if (!"AGENDADA".equals(consulta.getStatus()) &&
+                            !"SOLICITADO".equals(consulta.getStatus()) &&
+                            !"REAGENDADA".equals(consulta.getStatus())) {
+                        // Só permite cancelar se estiver AGENDADA, SOLICITADO ou REAGENDADA
+                        return false;
+                    }
                     consulta.setStatus("CANCELADA");
-                    // O motivo já deve ser setado antes de chamar este método
                     return true;
                 } else {
-                    // Se não tem paciente, pode remover (é só disponibilidade)
-                    agenda.values().remove(consulta);
+                    agenda.remove(consulta.getDataHoraInicio());
                     return true;
                 }
             }
@@ -89,9 +96,23 @@ public class SistemaAgendamento {
         return false;
     }
 
+    public void solicitarReagendamento(Consulta consulta) {
+        String idMedico = consulta.getMedico().getIdMedico();
+        agendas.get(idMedico).put(consulta.getDataHoraInicio(), consulta);
+        consulta.getPaciente().adicionarConsultaAoHistorico(consulta);
+    }
+
     // Retorna todos os médicos
     public List<Medico> getTodosMedicos() {
         return new ArrayList<>(medicos.values());
+    }
+
+    public TreeMap<LocalDateTime, Consulta> getAgendaMedico(String idMedico) {
+        return agendas.get(idMedico);
+    }
+
+    public List<Paciente> getTodosPacientes() {
+        return new ArrayList<>(pacientes.values());
     }
 
     // Retorna todas as consultas de um paciente

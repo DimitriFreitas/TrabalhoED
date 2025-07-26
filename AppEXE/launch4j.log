@@ -1,0 +1,23 @@
+
+
+Version:	3.50
+CmdLine:	C:\Users\jamin\Desktop\App\Clinica.exe --l4j-debug
+JNI:		No
+WOW64:		Yes
+Working dir:	C:\Users\jamin\Desktop\App\%EXEDIR%
+Requires JDK:	No
+Requires 64-Bit: No
+Java min ver:	1.024.000
+Java max ver:	
+Substitute:	EXEDIR = C:\Users\jamin\Desktop\App
+JRE paths:	C:\Users\jamin\Desktop\App\JRE
+Check launcher:	C:\Users\jamin\Desktop\App\JRE\bin\javaw.exe (OK)
+Version string: 1.024.000_001 / 64-Bit (OK)
+Substitute:	EXEDIR = C:\Users\jamin\Desktop\App
+Main class:	com.example.clinica_app.MainApp
+Substitute:	EXEDIR = C:\Users\jamin\Desktop\App
+Add classpath:	C:\Users\jamin\Desktop\App\clinica-app-1.0-SNAPSHOT.jar
+Launcher:	C:\Users\jamin\Desktop\App\JRE\bin\javaw.exe
+Launcher args:	--module-path C:\Users\jamin\Desktop\App\JavaFX\lib --add-modules javafx.controls,javafx.fxml -classpath "C:\Users\jamin\Desktop\App\Clinica.exe;C:\Users\jamin\Desktop\App\clinica-app-1.0-SNAPSHOT.jar" com.example.clinica_app.MainApp
+Args length:	233/32768 chars
+Exit code:	0

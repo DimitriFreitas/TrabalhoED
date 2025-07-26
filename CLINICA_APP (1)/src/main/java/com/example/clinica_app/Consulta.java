@@ -20,6 +20,10 @@ public class Consulta {
         this.dataHoraFim = dataHoraFim;
         this.status = "AGENDADA";
     }
+
+    public static final String STATUS_SOLICITADO = "SOLICITADO";
+    public static final String STATUS_REAGENDADA = "REAGENDADA";
+
     public Consulta(String idConsulta, Medico medico,
                     LocalDateTime dataHoraInicio, LocalDateTime dataHoraFim) {
         this.idConsulta = idConsulta;
@@ -67,5 +71,8 @@ public class Consulta {
             dataHoraInicio.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
             dataHoraFim.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"))
         );
+    }
+    public String getIdPaciente() {
+        return paciente != null ? paciente.getIdPaciente() : null;
     }
 }

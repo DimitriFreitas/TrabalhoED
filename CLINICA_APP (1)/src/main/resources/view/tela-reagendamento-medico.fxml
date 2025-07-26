@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="331.0" prefWidth="412.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.clinica_app.ClinicaController">
+    <children>
+        <Button fx:id="Voltar" alignment="CENTER" layoutX="14.0" layoutY="15.0" onAction="#onVoltarTelaMedico" prefHeight="12.0" prefWidth="67.0" text="Voltar" />
+        <Label layoutX="102.0" layoutY="44.0" prefHeight="96.0" prefWidth="208.0" style="-fx-font-size: 22px; -fx-font-weight: bold;" text="Solicitar Reagendamento de Consulta" textAlignment="CENTER" wrapText="true" />
+        <DatePicker fx:id="dataDisponibilidade" layoutX="134.0" layoutY="159.0" prefHeight="25.0" prefWidth="144.0" promptText="dd/mm/aaaa" />
+        <TextField fx:id="horaInicio" layoutX="134.0" layoutY="192.0" prefHeight="25.0" prefWidth="144.0" promptText="Hora início (ex: 14:00)" />
+        <TextField fx:id="horaFim" layoutX="134.0" layoutY="225.0" prefHeight="25.0" prefWidth="144.0" promptText="Hora fim (ex: 14:30)" />
+        <Button fx:id="Confirmar" layoutX="329.0" layoutY="292.0" onAction="#onAgendarConsultaMedico" text="Confirmar" />
+    </children>
+</AnchorPane>
